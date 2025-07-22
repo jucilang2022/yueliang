@@ -1,0 +1,478 @@
+/* 彩虹条 */
+.rainbow-bar {
+  width: 100vw;
+  height: 8px;
+  background: linear-gradient(90deg, #ff6ec4 0%, #fcb045 20%, #43e97b 40%, #38f9d7 60%, #4f8cff 80%, #a084ee 100%);
+  margin-bottom: 2em;
+  animation: rainbow-move 3s linear infinite alternate;
+}
+
+@keyframes rainbow-move {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+
+  100% {
+    filter: hue-rotate(30deg);
+  }
+}
+
+.homepage-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 40%, #a7ffeb 70%, #e0c3fc 100%);
+  transition: background 0.5s;
+  position: relative;
+}
+
+.lang-switch {
+  display: flex;
+  gap: 0.5em;
+  margin-bottom: 2em;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 400px;
+}
+
+.lang-switch button {
+  background: none;
+  border: none;
+  font-size: 1em;
+  color: #26a69a;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0.2em 0.8em;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.lang-switch button.active,
+.lang-switch button:hover {
+  background: #b2ebf2;
+  color: #00796b;
+}
+
+.lang-switch span {
+  color: #26a69a;
+  font-weight: bold;
+  align-self: center;
+}
+
+/* 优化主卡片和头像尺寸，提升适配性 */
+.profile-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 4px 24px 0 rgba(38, 166, 154, 0.08);
+  padding: 2em 1em 1.5em 1em;
+  max-width: 360px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: box-shadow 0.3s;
+  position: relative;
+  z-index: 1;
+}
+
+.avatar-floating {
+  width: 60px;
+  height: 60px;
+}
+
+.avatar-contacts {
+  min-width: 120px;
+  font-size: 0.98em;
+}
+
+@media (max-width: 600px) {
+  .profile-card {
+    padding: 1em 0.2em 1em 0.2em;
+    max-width: 98vw;
+  }
+
+  .avatar-contact-group {
+    top: 8px;
+    right: 4px;
+  }
+
+  .avatar-floating {
+    width: 44px;
+    height: 44px;
+  }
+
+  .avatar-contacts {
+    min-width: 80px;
+    font-size: 0.92em;
+  }
+}
+
+.profile-card:hover {
+  box-shadow: 0 8px 32px 0 rgba(38, 166, 154, 0.16);
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  margin-bottom: 1.2em;
+  border: 4px solid #b2ebf2;
+  background: #e0f7fa;
+}
+
+.profile-card h1 {
+  margin: 0.2em 0 0.5em 0;
+  font-size: 2em;
+  color: #00796b;
+  font-weight: 800;
+}
+
+.profile-card .desc {
+  color: #26a69a;
+  font-size: 1.1em;
+  margin-bottom: 1.5em;
+  text-align: center;
+}
+
+/* 社交链接滑动区 */
+.links {
+  display: flex;
+  gap: 1.2em;
+  justify-content: flex-start;
+  overflow-x: auto;
+  width: 100%;
+  padding-bottom: 0.5em;
+  scrollbar-width: thin;
+  scrollbar-color: #b2ebf2 #e0f7fa;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  animation: links-slide-in 0.8s cubic-bezier(.68, -0.55, .27, 1.55);
+  min-height: 90px;
+  align-items: center;
+  padding-top: 0.8em;
+}
+
+@keyframes links-slide-in {
+  from {
+    transform: translateX(60px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.icon-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #26a69a;
+  text-decoration: none;
+  font-size: 1.1em;
+  transition: color 0.2s, transform 0.2s;
+  min-width: 64px;
+  scroll-snap-align: center;
+  user-select: none;
+}
+
+.icon-link:hover {
+  color: #ff6ec4;
+  transform: scale(1.15) rotate(-6deg);
+}
+
+.icon-link svg {
+  font-size: 2em;
+  margin-bottom: 0.2em;
+  transition: transform 0.3s;
+}
+
+.icon-link:active svg {
+  transform: scale(1.2) rotate(8deg);
+}
+
+/* 右上角悬浮头像 */
+.avatar-floating {
+  position: absolute;
+  top: 32px;
+  right: 32px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 4px solid #b2ebf2;
+  background: #e0f7fa;
+  box-shadow: 0 4px 16px 0 rgba(38, 166, 154, 0.12);
+  z-index: 10;
+  transition: transform 0.2s;
+  margin-bottom: 0.5em;
+}
+
+.avatar-floating:hover {
+  transform: scale(1.08) rotate(-4deg);
+}
+
+/* 联系方式区 */
+.contacts {
+  margin-top: 2em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+  align-items: flex-start;
+  width: 100%;
+  font-size: 1.08em;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  color: #26a69a;
+  background: rgba(178, 235, 242, 0.18);
+  border-radius: 8px;
+  padding: 0.3em 0.8em;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+
+.contact-item svg {
+  font-size: 1.3em;
+  color: #4f8cff;
+}
+
+.contact-item .contact-value {
+  color: #00796b;
+  font-family: monospace;
+  margin-left: 0.2em;
+}
+
+.contact-item:hover {
+  background: #e0f7fa;
+  color: #00796b;
+}
+
+.contacts.simple-contacts {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  align-items: center;
+  width: 100%;
+  font-size: 1.05em;
+}
+
+.contact-item.simple {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  color: #444;
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  font-weight: 400;
+  transition: none;
+  box-shadow: none;
+}
+
+.contact-item.simple svg {
+  font-size: 1.2em;
+  color: #888;
+}
+
+.contact-item.simple .contact-value {
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  margin-left: 0.2em;
+}
+
+.contact-item.simple:hover {
+  background: none;
+  color: #444;
+}
+
+.avatar-contact-group {
+  position: absolute;
+  top: 32px;
+  right: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 20;
+}
+
+.avatar-floating {
+  z-index: 21;
+}
+
+.avatar-contacts {
+  position: absolute;
+  top: calc(100% + 120px);
+  left: 50%;
+  transform: translateX(-110%);
+  align-items: flex-start;
+  min-width: 180px;
+  z-index: 20;
+}
+
+.avatar-contacts .contact-item.simple {
+  justify-content: flex-start;
+  text-align: left;
+  width: 100%;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .profile-card {
+    padding: 1.5em 0.5em 1.5em 0.5em;
+    max-width: 95vw;
+  }
+
+  .lang-switch {
+    max-width: 95vw;
+  }
+
+  .links {
+    gap: 0.8em;
+  }
+
+  .avatar-contact-group {
+    top: 12px;
+    right: 8px;
+  }
+
+  .avatar-contacts {
+    min-width: 120px;
+  }
+}
+
+.footer-contact {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.6em 0 0.7em 0;
+  z-index: 30;
+  box-shadow: 0 -2px 12px 0 rgba(38, 166, 154, 0.08);
+}
+
+.contact-btn {
+  background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 0.6em 2.2em;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 8px 0 rgba(38, 166, 154, 0.10);
+  transition: background 0.2s, color 0.2s;
+}
+
+.contact-btn:hover {
+  background: linear-gradient(90deg, #38f9d7 0%, #43e97b 100%);
+  color: #00796b;
+}
+
+.contact-modal-mask {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 2em 2.2em 1.5em 2.2em;
+  min-width: 260px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px 0 rgba(38, 166, 154, 0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: modal-pop 0.25s cubic-bezier(.68, -0.55, .27, 1.55);
+}
+
+@keyframes modal-pop {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-contacts {
+  margin: 1.2em 0 1.2em 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  align-items: flex-start;
+}
+
+.contact-item.modal {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  color: #26a69a;
+  font-size: 1.08em;
+  font-weight: 500;
+}
+
+.contact-item.modal svg {
+  font-size: 1.3em;
+  color: #4f8cff;
+}
+
+.contact-item.modal .contact-value {
+  color: #00796b;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  margin-left: 0.2em;
+}
+
+.close-btn {
+  margin-top: 0.5em;
+  background: #b2ebf2;
+  color: #00796b;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4em 1.5em;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.close-btn:hover {
+  background: #43e97b;
+  color: #fff;
+}
+
+.contact-modal h2 {
+  color: #26a69a;
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 1em;
+  margin-top: 0;
+  text-align: center;
+}
