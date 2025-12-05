@@ -109,20 +109,36 @@ function HologramWidget() {
 
       {/* Chaos Lines / Orbital Paths */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        {[...Array(5)].map((_, i) => (
+        {[
+          "rgba(239, 68, 68, 0.3)",   // Red
+          "rgba(249, 115, 22, 0.3)",  // Orange
+          "rgba(234, 179, 8, 0.3)",   // Yellow
+          "rgba(34, 197, 94, 0.3)",   // Green
+          "rgba(59, 130, 246, 0.3)",  // Blue
+          "rgba(168, 85, 247, 0.3)",  // Indigo
+          "rgba(236, 72, 153, 0.3)",  // Violet
+        ].map((color, i) => (
           <motion.div
             key={i}
-            className="absolute border border-purple-500/20 rounded-[40%] w-[60%] h-[60%]"
+            className="absolute w-[60%] h-[60%]"
             style={{
-              rotate: i * 36,
+              border: `1px solid ${color}`,
+              // Unique organic shape for each ring
+              borderRadius: `${30 + i * 5}% ${70 - i * 5}% ${50 + (i % 2) * 20}% ${50 - (i % 2) * 20}% / ${40 + i * 3}% ${60 - i * 3}% ${30 + i * 4}% ${70 - i * 4}%`,
             }}
             animate={{
-              rotate: [i * 36, i * 36 + 360],
-              scale: [1, 1.1, 1],
+              rotate: i % 2 === 0 ? [0, 360] : [360, 0], // Alternate directions
+              scale: [1, 1.05 + i * 0.02, 1], // Subtle breathing
+              borderRadius: [
+                `${30 + i * 5}% ${70 - i * 5}% ${50 + (i % 2) * 20}% ${50 - (i % 2) * 20}% / ${40 + i * 3}% ${60 - i * 3}% ${30 + i * 4}% ${70 - i * 4}%`,
+                `${50 - (i % 2) * 20}% ${50 + (i % 2) * 20}% ${30 + i * 5}% ${70 - i * 5}% / ${30 + i * 4}% ${70 - i * 4}% ${40 + i * 3}% ${60 - i * 3}%`,
+                `${30 + i * 5}% ${70 - i * 5}% ${50 + (i % 2) * 20}% ${50 - (i % 2) * 20}% / ${40 + i * 3}% ${60 - i * 3}% ${30 + i * 4}% ${70 - i * 4}%`
+              ]
             }}
             transition={{
-              rotate: { duration: 20 + i * 5, repeat: Infinity, ease: "linear" },
-              scale: { duration: 5 + i, repeat: Infinity, ease: "easeInOut" }
+              rotate: { duration: 15 + i * 3, repeat: Infinity, ease: "linear" },
+              scale: { duration: 4 + i, repeat: Infinity, ease: "easeInOut" },
+              borderRadius: { duration: 8 + i, repeat: Infinity, ease: "easeInOut" } // Morphing shape
             }}
           />
         ))}
