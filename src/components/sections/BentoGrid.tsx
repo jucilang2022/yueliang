@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
-import { Globe, Music, MapPin, Quote, Github, Twitter, Instagram, ArrowUpRight } from "lucide-react";
+import { Music, MapPin, Quote, Github, ArrowUpRight } from "lucide-react";
 import { GlowingEffect } from "../ui/GlowingEffect";
 import { useEffect, useState } from "react";
 

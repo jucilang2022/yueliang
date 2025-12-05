@@ -29,7 +29,7 @@ const projects = [
   }
 ];
 
-function ProjectCard({ project, index }: { project: typeof projects[0], index: number }) {
+function ProjectCard({ project }: { project: typeof projects[0] }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -40,7 +40,7 @@ function ProjectCard({ project, index }: { project: typeof projects[0], index: n
   const opacity = useTransform(scrollYProgress, [0, 0.2, 0.9, 1], [0, 1, 1, 0]);
 
   return (
-    <motion.div 
+    <motion.div
       ref={ref}
       style={{ opacity }}
       className="relative h-[70vh] w-full flex items-center justify-center sticky top-0"
@@ -48,18 +48,18 @@ function ProjectCard({ project, index }: { project: typeof projects[0], index: n
       <div className="relative w-full max-w-4xl mx-auto h-[500px] rounded-3xl overflow-hidden group border border-white/10 bg-gray-900">
         {/* Background Image with elegant transition */}
         <motion.div style={{ y }} className="absolute inset-0 grayscale group-hover:grayscale-0 transition-all duration-700 ease-in-out">
-          <img 
-            src={project.image} 
+          <img
+            src={project.image}
             alt={project.title}
             className="w-full h-[120%] object-cover opacity-60 group-hover:opacity-90 transition-opacity duration-500"
           />
         </motion.div>
-        
+
         {/* Gradient Overlay - only subtle shadow now */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-20" />
 
         <div className="absolute inset-0 z-30 p-8 md:p-12 flex flex-col justify-end">
-          <motion.div 
+          <motion.div
             initial={{ y: 20, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}

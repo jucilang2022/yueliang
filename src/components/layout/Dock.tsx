@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { Home, Layers, User, Mail } from "lucide-react";
-import { useState } from "react";
 import { cn } from "../../lib/utils";
 
 const navItems = [
@@ -18,7 +17,7 @@ interface DockProps {
 export function Dock({ currentView, onChangeView }: DockProps) {
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto">
-      <motion.div 
+      <motion.div
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 1, duration: 0.5, type: "spring" }}
@@ -27,7 +26,7 @@ export function Dock({ currentView, onChangeView }: DockProps) {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
-          
+
           return (
             <button
               key={item.id}
@@ -41,11 +40,11 @@ export function Dock({ currentView, onChangeView }: DockProps) {
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
-              <Icon 
+              <Icon
                 className={cn(
                   "w-5 h-5 relative z-10 transition-colors duration-300",
                   isActive ? "text-white" : "text-gray-400 hover:text-white"
-                )} 
+                )}
               />
               <span className="sr-only">{item.label}</span>
             </button>

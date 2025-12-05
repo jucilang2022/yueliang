@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Github, Twitter, Mail, Linkedin, Instagram, Dribbble, Disc, Music } from "lucide-react";
+import { Github, Twitter, Mail, Linkedin, Dribbble, Disc, Music } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../../lib/utils";
 

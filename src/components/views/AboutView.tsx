@@ -25,7 +25,7 @@ const timeline = [
 
 export function AboutView() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
+  useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
   });
@@ -38,13 +38,13 @@ export function AboutView() {
       className="pt-32 pb-24 px-6 max-w-3xl mx-auto min-h-screen"
     >
       <h1 className="text-4xl font-bold mb-16">The Journey</h1>
-      
+
       <div ref={containerRef} className="relative space-y-24 pl-8 md:pl-0">
         {/* Continuous Line */}
         <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-px bg-white/10 -translate-x-1/2" />
-        
+
         {timeline.map((item, index) => (
-          <motion.div 
+          <motion.div
             key={index}
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -56,7 +56,7 @@ export function AboutView() {
           >
             {/* Timeline Node */}
             <div className="absolute left-0 md:left-1/2 w-4 h-4 rounded-full bg-white border-4 border-black z-10 -translate-x-[calc(50%+1px)] md:-translate-x-1/2 mt-1.5 md:mt-0" />
-            
+
             {/* Content */}
             <div className={cn(
               "w-full md:w-1/2 px-4 md:px-12",
@@ -71,7 +71,7 @@ export function AboutView() {
                 <p className="text-gray-400 leading-relaxed">{item.description}</p>
               </div>
             </div>
-            
+
             {/* Empty space for the other side */}
             <div className="hidden md:block w-1/2" />
           </motion.div>
