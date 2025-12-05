@@ -12,11 +12,11 @@ export function About() {
           className="space-y-8"
         >
           <h2 className="text-2xl md:text-3xl font-light leading-relaxed text-gray-200">
-            我相信设计不仅仅是外观，<br />
-            更是一种<span className="text-white font-semibold"> 运作方式 </span>。
+            我相信在这里，<br />
+            你将感受到<span className="text-white font-semibold"> 不一样的世界 </span>。
           </h2>
           <p className="text-gray-400 leading-relaxed">
-            在过去的三年里，我一直专注于打磨数字产品。从构思到代码，我享受每一个创造的环节。我的目标是让每一个像素都富有生命力。
+          Welcome to the <span className="text-white font-semibold"> real world </span>.It sucks, but you're gonna love it. 
           </p>
           
           <div className="h-px w-24 bg-gradient-to-r from-white/50 to-transparent mt-12" />

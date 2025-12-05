@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Github, Twitter, Mail, Instagram, Facebook, Disc } from "lucide-react";
-import { DoubanIcon } from "../ui/icons";
+import { SiDouban, SiSteam } from "react-icons/si";
 import { useState } from "react";
 import { cn } from "../../lib/utils";
 
@@ -9,14 +9,14 @@ const socials = [
     id: "github",
     name: "GitHub",
     icon: Github,
-    note: "我的代码灵感与开源宇宙",
+    note: "我的灵感与开源宇宙",
     color: "bg-gray-800",
     url: "https://github.com/jucilang2022"
   },
   {
     id: "douban",
     name: "Douban",
-    icon: DoubanIcon,
+    icon: SiDouban,
     note: "记录书影音的精神角落",
     color: "bg-green-600",
     url: "https://www.douban.com/people/230674291/"
@@ -27,7 +27,7 @@ const socials = [
     icon: Mail,
     note: "欢迎随时来信探讨合作",
     color: "bg-rose-500",
-    url: "mailto:hello@example.com"
+    url: "mailto:jucilang06love@gmail.com"
   },
   {
     id: "twitter",
@@ -35,7 +35,7 @@ const socials = [
     icon: Twitter,
     note: "捕捉瞬时的思维火花",
     color: "bg-blue-500",
-    url: "https://twitter.com"
+    url: "https://twitter.com/jclng10"
   },
   {
     id: "instagram",
@@ -52,6 +52,14 @@ const socials = [
     note: "连接更广阔的社交网络",
     color: "bg-blue-700",
     url: "https://facebook.com"
+  },
+  {
+    id: "steam",
+    name: "Steam",
+    icon: SiSteam,
+    note: "第九艺术的数字收藏库",
+    color: "bg-slate-800",
+    url: "https://steamcommunity.com"
   },
 ];
 

@@ -46,7 +46,7 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          你好，我是<span className="text-white font-medium"> 创造者 </span>。
+          你好，我是<span className="text-white font-medium"> 小酷 </span>。
           <br />
           探索设计与代码的边界，
           <br />
