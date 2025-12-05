@@ -16,7 +16,8 @@ const projects = [
     title: "Neon City",
     category: "Photography",
     description: "A visual journey through the cyberpunk aesthetics of modern Tokyo nights.",
-    image: "https://images.unsplash.com/photo-1580137197581-91a4a6c560f0?q=80&w=2070&auto=format&fit=crop",
+    // 备选：Picsum 固定 ID (Cyberpunk 风格)
+    image: "https://picsum.photos/id/122/2000/1200",
     color: "from-pink-500/20 to-rose-500/20"
   },
   {
