@@ -95,8 +95,8 @@ export function ProjectsView() {
         Selected Works
       </h1>
       <div className="space-y-20">
-        {projects.map((project, index) => (
-          <ProjectCard key={project.id} project={project} index={index} />
+        {projects.map((project) => (
+          <ProjectCard key={project.id} project={project} />
         ))}
       </div>
     </motion.div>
