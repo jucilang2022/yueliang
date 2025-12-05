@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
-import { Music, MapPin, Quote, Github, ArrowUpRight } from "lucide-react";
+import { Music, MapPin, Quote, ArrowUpRight } from "lucide-react";
 import { GlowingEffect } from "../ui/GlowingEffect";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 interface CardProps {
   className?: string;

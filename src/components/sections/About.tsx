@@ -16,7 +16,7 @@ export function About() {
             你将感受到<span className="text-white font-semibold"> 不一样的世界 </span>。
           </h2>
           <p className="text-gray-400 leading-relaxed">
-          Welcome to the <span className="text-white font-semibold"> real world </span>.It sucks, but you're gonna love it. 
+          Welcome to the <span className="text-white font-semibold"> real world. </span>It sucks, but you're gonna love it. 
           </p>
           
           <div className="h-px w-24 bg-gradient-to-r from-white/50 to-transparent mt-12" />

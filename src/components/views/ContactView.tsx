@@ -35,7 +35,7 @@ const socials = [
     icon: Twitter,
     note: "捕捉瞬时的思维火花",
     color: "bg-blue-500",
-    url: "https://twitter.com/jclng10"
+    url: "https://x.com/jclng10?s=21"
   },
   {
     id: "instagram",
@@ -43,7 +43,7 @@ const socials = [
     icon: Instagram,
     note: "探索纯粹的视觉美学",
     color: "bg-pink-600",
-    url: "https://instagram.com"
+    url: "https://www.instagram.com/xiaoku_03?igsh=MWRuYTUyYzhyanlkag%3D%3D&utm_source=qr"
   },
   {
     id: "facebook",
@@ -59,7 +59,7 @@ const socials = [
     icon: SiSteam,
     note: "第九艺术的数字收藏库",
     color: "bg-slate-800",
-    url: "https://steamcommunity.com"
+    url: "https://steamcommunity.com/profiles/76561199208640498/"
   },
 ];
 
