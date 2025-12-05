@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
 import { Music, MapPin, Quote, Github, ArrowUpRight } from "lucide-react";
 import { GlowingEffect } from "../ui/GlowingEffect";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface CardProps {
   className?: string;
@@ -21,8 +21,8 @@ const BentoCard = ({ className, children, delay = 0, noPadding = false }: CardPr
   >
     <GlowingEffect className="h-full rounded-3xl p-[1px]">
       <div className={cn(
-        "h-full rounded-3xl bg-black/40 backdrop-blur-xl flex flex-col relative z-20 overflow-hidden",
-        !noPadding && "p-6"
+        "h-full w-full rounded-3xl flex flex-col relative z-20 overflow-hidden",
+        !noPadding ? "bg-black/40 backdrop-blur-xl p-6" : "bg-black"
       )}>
         {children}
       </div>
@@ -60,32 +60,98 @@ function TimeWidget() {
 }
 
 function HologramWidget() {
+  const [particles, setParticles] = useState<Array<{ x: number; y: number; duration: number; delay: number; size: number; color: string }>>([]);
+
+  useEffect(() => {
+    const newParticles = Array.from({ length: 30 }, () => ({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      duration: Math.random() * 20 + 10, // Constant slow movement
+      delay: Math.random() * 10,
+      size: Math.random() * 3 + 1,
+      color: Math.random() > 0.5 ? "rgba(168, 85, 247, 0.6)" : "rgba(255, 255, 255, 0.4)"
+    }));
+    setParticles(newParticles);
+  }, []);
+
   return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-gradient-to-b from-purple-900/20 to-black">
-      <div className="relative w-40 h-40">
-        {/* Simulated 3D Grid Sphere */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute inset-0 border border-purple-500/30 rounded-full"
-          style={{ transformStyle: "preserve-3d" }}
-        >
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className={cn(
-              "absolute inset-0 border border-purple-400/20 rounded-full",
-              i === 0 && "rotate-x-45",
-              i === 1 && "rotate-y-45",
-              i === 2 && "rotate-45"
-            )} />
-          ))}
-        </motion.div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-20 h-20 bg-purple-500/20 blur-xl rounded-full animate-pulse" />
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-black rounded-3xl">
+      {/* Moving Particles - Uses CSS animations for infinite loop */}
+      <div className="absolute inset-0 w-full h-full">
+        {particles.map((p, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full shadow-[0_0_8px_rgba(168,85,247,0.4)]"
+            style={{
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              width: `${p.size}px`,
+              height: `${p.size}px`,
+              backgroundColor: p.color,
+            }}
+            animate={{
+              x: [0, (Math.random() - 0.5) * 100, 0],
+              y: [0, (Math.random() - 0.5) * 100, 0],
+              opacity: [0.4, 1, 0.4]
+            }}
+            transition={{
+              duration: p.duration,
+              repeat: Infinity,
+              ease: "linear",
+              delay: p.delay
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Cyber Grid Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(168,85,247,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(168,85,247,0.05)_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_80%)]" />
+
+      {/* Chaos Lines / Orbital Paths */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        {[...Array(5)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute border border-purple-500/20 rounded-[40%] w-[60%] h-[60%]"
+            style={{
+              rotate: i * 36,
+            }}
+            animate={{
+              rotate: [i * 36, i * 36 + 360],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              rotate: { duration: 20 + i * 5, repeat: Infinity, ease: "linear" },
+              scale: { duration: 5 + i, repeat: Infinity, ease: "easeInOut" }
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Central Data Core */}
+      <div className="relative z-20 group cursor-pointer">
+        <div className="w-20 h-20 bg-black/80 backdrop-blur-md rounded-full border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.3)] flex items-center justify-center relative overflow-hidden group-hover:scale-110 transition-transform duration-500">
+          <motion.div
+            animate={{ rotate: [0, 360] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 border-t border-l border-purple-500/60 rounded-full"
+          />
+          <motion.div
+            animate={{ rotate: [360, 0] }}
+            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-2 border-b border-r border-white/20 rounded-full"
+          />
+          <div className="z-30 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping" />
         </div>
       </div>
-      <div className="absolute bottom-6 left-6 right-6">
+
+      {/* Title */}
+      <div className="absolute bottom-6 left-6 right-6 z-20">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-purple-200">Next Dimension</span>
+          <div>
+            <span className="text-sm font-medium text-purple-200 block tracking-wider">SYSTEM.CORE</span>
+            <span className="text-[10px] text-purple-400/60 font-mono uppercase">Status: Online</span>
+          </div>
           <ArrowUpRight className="w-4 h-4 text-purple-200" />
         </div>
       </div>
@@ -150,7 +216,7 @@ export function BentoGrid() {
         </BentoCard>
 
         {/* 2. Time & Status */}
-        <BentoCard className="col-span-1 row-span-1 bg-gradient-to-br from-gray-900 to-black">
+        <BentoCard className="col-span-1 row-span-1">
           <TimeWidget />
         </BentoCard>
 
@@ -159,21 +225,9 @@ export function BentoGrid() {
           <MapWidget />
         </BentoCard>
 
-        {/* 4. Zen Quote */}
-        <BentoCard className="col-span-1 row-span-1">
+        {/* 4. Zen Quote - Expanded to 2 cols */}
+        <BentoCard className="col-span-2 row-span-1">
           <ZenWidget />
-        </BentoCard>
-
-        {/* 5. Social Stack */}
-        <BentoCard className="col-span-1 row-span-1 flex flex-col justify-between group/github">
-          <div className="flex justify-between items-start">
-            <div className="p-2 bg-white/5 rounded-lg group-hover/github:bg-white/10 transition-colors"><Github className="w-5 h-5" /></div>
-            <ArrowUpRight className="w-4 h-4 text-gray-500 group-hover/github:text-white transition-colors" />
-          </div>
-          <div>
-            <div className="font-medium group-hover/github:text-blue-400 transition-colors">Open Source</div>
-            <div className="text-xs text-gray-500">24 Repos</div>
-          </div>
         </BentoCard>
 
       </div>
