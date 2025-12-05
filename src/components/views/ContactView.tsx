@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Github, Twitter, Mail, Linkedin, Dribbble, Disc, Music } from "lucide-react";
+import { Github, Twitter, Mail, Instagram, Facebook, Disc } from "lucide-react";
+import { DoubanIcon } from "../ui/icons";
 import { useState } from "react";
 import { cn } from "../../lib/utils";
 
@@ -10,15 +11,15 @@ const socials = [
     icon: Github,
     note: "我的代码灵感与开源宇宙",
     color: "bg-gray-800",
-    url: "https://github.com"
+    url: "https://github.com/jucilang2022"
   },
   {
-    id: "twitter",
-    name: "Twitter",
-    icon: Twitter,
-    note: "捕捉瞬时的思维火花",
-    color: "bg-blue-500",
-    url: "https://twitter.com"
+    id: "douban",
+    name: "Douban",
+    icon: DoubanIcon,
+    note: "记录书影音的精神角落",
+    color: "bg-green-600",
+    url: "https://www.douban.com/people/230674291/"
   },
   {
     id: "email",
@@ -29,28 +30,28 @@ const socials = [
     url: "mailto:hello@example.com"
   },
   {
-    id: "linkedin",
-    name: "LinkedIn",
-    icon: Linkedin,
-    note: "职业生涯的数字轨迹",
-    color: "bg-blue-700",
-    url: "https://linkedin.com"
+    id: "twitter",
+    name: "Twitter",
+    icon: Twitter,
+    note: "捕捉瞬时的思维火花",
+    color: "bg-blue-500",
+    url: "https://twitter.com"
   },
   {
-    id: "dribbble",
-    name: "Dribbble",
-    icon: Dribbble,
+    id: "instagram",
+    name: "Instagram",
+    icon: Instagram,
     note: "探索纯粹的视觉美学",
-    color: "bg-pink-500",
-    url: "https://dribbble.com"
+    color: "bg-pink-600",
+    url: "https://instagram.com"
   },
   {
-    id: "music",
-    name: "Music",
-    icon: Music,
-    note: "编码时的精神燃料",
-    color: "bg-green-500",
-    url: "https://spotify.com"
+    id: "facebook",
+    name: "Facebook",
+    icon: Facebook,
+    note: "连接更广阔的社交网络",
+    color: "bg-blue-700",
+    url: "https://facebook.com"
   },
 ];
 
@@ -123,14 +124,14 @@ export function ContactView() {
               animate={{
                 x: isExpanded ? pos.x : 0,
                 y: isExpanded ? pos.y : 0,
-                scale: isExpanded ? 1 : 0.2, // Start visible but small
+                scale: isExpanded ? 1 : 0.3, // Start slightly larger to be seen immediately
                 opacity: isExpanded ? 1 : 0,
               }}
               transition={{
                 type: "tween",
                 ease: "easeOut",
-                duration: 0.4,
-                delay: 0 // No stagger, all at once
+                duration: 0.25, // Extremely fast (1.5x faster than 0.4s)
+                delay: 0
               }}
               onMouseEnter={() => setActiveId(social.id)}
               onMouseLeave={() => setActiveId(null)}
