@@ -110,35 +110,40 @@ function HologramWidget() {
       {/* Chaos Lines / Orbital Paths */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         {[
-          "rgba(239, 68, 68, 0.3)",   // Red
-          "rgba(249, 115, 22, 0.3)",  // Orange
-          "rgba(234, 179, 8, 0.3)",   // Yellow
-          "rgba(34, 197, 94, 0.3)",   // Green
-          "rgba(59, 130, 246, 0.3)",  // Blue
-          "rgba(168, 85, 247, 0.3)",  // Indigo
-          "rgba(236, 72, 153, 0.3)",  // Violet
+          "rgba(239, 68, 68, 0.4)",   // Red
+          "rgba(249, 115, 22, 0.4)",  // Orange
+          "rgba(234, 179, 8, 0.4)",   // Yellow
+          "rgba(34, 197, 94, 0.4)",   // Green
+          "rgba(59, 130, 246, 0.4)",  // Blue
+          "rgba(168, 85, 247, 0.4)",  // Indigo
+          "rgba(236, 72, 153, 0.4)",  // Violet
+          "rgba(20, 184, 166, 0.4)",  // Teal
+          "rgba(244, 63, 94, 0.4)",   // Rose
         ].map((color, i) => (
           <motion.div
             key={i}
-            className="absolute w-[60%] h-[60%]"
+            className="absolute w-[50%] h-[50%]"
             style={{
-              border: `1px solid ${color}`,
-              // Unique organic shape for each ring
-              borderRadius: `${30 + i * 5}% ${70 - i * 5}% ${50 + (i % 2) * 20}% ${50 - (i % 2) * 20}% / ${40 + i * 3}% ${60 - i * 3}% ${30 + i * 4}% ${70 - i * 4}%`,
+              border: `${i % 3 === 0 ? '2px' : '1px'} solid ${color}`,
+              // Extreme organic shapes
+              borderRadius: `${30 + i * 5}% ${70 - i * 5}% ${40 + (i % 3) * 20}% ${60 - (i % 3) * 20}% / ${50 + i * 3}% ${50 - i * 3}% ${30 + i * 4}% ${70 - i * 4}%`,
             }}
             animate={{
-              rotate: i % 2 === 0 ? [0, 360] : [360, 0], // Alternate directions
-              scale: [1, 1.05 + i * 0.02, 1], // Subtle breathing
+              rotate: i % 2 === 0 ? [0, 360] : [360, 0],
+              scale: [1, 1.1 + i * 0.03, 1],
+              opacity: [0.3, 0.7, 0.3], // Flickering effect
               borderRadius: [
-                `${30 + i * 5}% ${70 - i * 5}% ${50 + (i % 2) * 20}% ${50 - (i % 2) * 20}% / ${40 + i * 3}% ${60 - i * 3}% ${30 + i * 4}% ${70 - i * 4}%`,
+                `${30 + i * 5}% ${70 - i * 5}% ${40 + (i % 3) * 20}% ${60 - (i % 3) * 20}% / ${50 + i * 3}% ${50 - i * 3}% ${30 + i * 4}% ${70 - i * 4}%`,
                 `${50 - (i % 2) * 20}% ${50 + (i % 2) * 20}% ${30 + i * 5}% ${70 - i * 5}% / ${30 + i * 4}% ${70 - i * 4}% ${40 + i * 3}% ${60 - i * 3}%`,
-                `${30 + i * 5}% ${70 - i * 5}% ${50 + (i % 2) * 20}% ${50 - (i % 2) * 20}% / ${40 + i * 3}% ${60 - i * 3}% ${30 + i * 4}% ${70 - i * 4}%`
+                `${60 - i * 3}% ${40 + i * 3}% ${70 - i * 4}% ${30 + i * 4}% / ${30 + i * 5}% ${70 - i * 5}% ${50 + (i % 2) * 20}% ${50 - (i % 2) * 20}%`,
+                `${30 + i * 5}% ${70 - i * 5}% ${40 + (i % 3) * 20}% ${60 - (i % 3) * 20}% / ${50 + i * 3}% ${50 - i * 3}% ${30 + i * 4}% ${70 - i * 4}%`
               ]
             }}
             transition={{
-              rotate: { duration: 15 + i * 3, repeat: Infinity, ease: "linear" },
-              scale: { duration: 4 + i, repeat: Infinity, ease: "easeInOut" },
-              borderRadius: { duration: 8 + i, repeat: Infinity, ease: "easeInOut" } // Morphing shape
+              rotate: { duration: 10 + i * 2, repeat: Infinity, ease: "linear" }, // Faster rotation
+              scale: { duration: 3 + i, repeat: Infinity, ease: "easeInOut" },
+              opacity: { duration: 2 + Math.random() * 2, repeat: Infinity, ease: "easeInOut" },
+              borderRadius: { duration: 5 + i, repeat: Infinity, ease: "easeInOut" }
             }}
           />
         ))}
@@ -146,19 +151,54 @@ function HologramWidget() {
 
       {/* Central Data Core */}
       <div className="relative z-20 group cursor-pointer">
-        <div className="w-20 h-20 bg-black/80 backdrop-blur-md rounded-full border border-purple-500/30 shadow-[0_0_30px_rgba(147,51,234,0.3)] flex items-center justify-center relative overflow-hidden group-hover:scale-110 transition-transform duration-500">
+        <motion.div
+          className="w-20 h-20 bg-black/80 backdrop-blur-md rounded-full border flex items-center justify-center relative overflow-hidden group-hover:scale-110 transition-transform duration-500"
+          animate={{
+            borderColor: ["rgba(239,68,68,0.3)", "rgba(34,197,94,0.3)", "rgba(59,130,246,0.3)", "rgba(239,68,68,0.3)"],
+            boxShadow: [
+              "0 0 30px rgba(239,68,68,0.2)",
+              "0 0 30px rgba(34,197,94,0.2)",
+              "0 0 30px rgba(59,130,246,0.2)",
+              "0 0 30px rgba(239,68,68,0.2)"
+            ]
+          }}
+          transition={{
+            duration: 5, // Different timing from inner core
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        >
           <motion.div
             animate={{ rotate: [0, 360] }}
             transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 border-t border-l border-purple-500/60 rounded-full"
+            className="absolute inset-0 border-t border-l border-white/10 rounded-full"
           />
           <motion.div
             animate={{ rotate: [360, 0] }}
             transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
             className="absolute inset-2 border-b border-r border-white/20 rounded-full"
           />
-          <div className="z-30 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping" />
-        </div>
+          <motion.div
+            className="z-30 w-6 h-6 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.5)]"
+            animate={{
+              scale: [1, 1.2, 1],
+              backgroundColor: [
+                "#ef4444", // Red
+                "#f97316", // Orange
+                "#eab308", // Yellow
+                "#22c55e", // Green
+                "#3b82f6", // Blue
+                "#a855f7", // Indigo
+                "#ec4899", // Violet
+                "#ef4444"  // Loop back to Red
+              ]
+            }}
+            transition={{
+              scale: { duration: 1, repeat: Infinity, ease: "easeInOut" },
+              backgroundColor: { duration: 4, repeat: Infinity, ease: "linear" } // Cycle colors over 4 seconds
+            }}
+          />
+        </motion.div>
       </div>
 
       {/* Title */}
@@ -166,7 +206,19 @@ function HologramWidget() {
         <div className="flex items-center justify-between">
           <div>
             <span className="text-sm font-medium text-purple-200 block tracking-wider">SYSTEM.CORE</span>
-            <span className="text-[10px] text-purple-400/60 font-mono uppercase">Status: Online</span>
+            <motion.span
+              className="text-[10px] font-mono uppercase"
+              animate={{
+                color: ["#a855f7", "#ec4899", "#3b82f6", "#a855f7"]
+              }}
+              transition={{
+                duration: 3, // Faster cycle
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            >
+              Status: Online
+            </motion.span>
           </div>
           <ArrowUpRight className="w-4 h-4 text-purple-200" />
         </div>
