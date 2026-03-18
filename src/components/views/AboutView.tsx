@@ -7,27 +7,27 @@ const timeline = [
     year: "2025",
     title: "Senior Creative Developer",
     company: "Tech Innovators Inc.",
-    description: "Leading the frontend architecture for next-gen web applications."
+    description: "Leading the frontend architecture for next-gen web applications.",
   },
   {
     year: "2023",
     title: "Full Stack Developer",
     company: "Digital Agency",
-    description: "Built award-winning marketing sites for global brands using React and WebGL."
+    description: "Built award-winning marketing sites for global brands using React and WebGL.",
   },
   {
     year: "2021",
     title: "UI/UX Designer",
     company: "Freelance",
-    description: "Started journey in digital product design, focusing on mobile-first experiences."
-  }
+    description: "Started journey in digital product design, focusing on mobile-first experiences.",
+  },
 ];
 
 export function AboutView() {
   const containerRef = useRef<HTMLDivElement>(null);
   useScroll({
     target: containerRef,
-    offset: ["start start", "end end"]
+    offset: ["start start", "end end"],
   });
 
   return (
@@ -51,17 +51,19 @@ export function AboutView() {
             viewport={{ once: true, margin: "-100px" }}
             className={cn(
               "relative flex flex-col md:flex-row gap-8 md:gap-0 items-start md:items-center",
-              index % 2 === 0 ? "md:flex-row-reverse" : ""
+              index % 2 === 0 ? "md:flex-row-reverse" : "",
             )}
           >
             {/* Timeline Node */}
             <div className="absolute left-0 md:left-1/2 w-4 h-4 rounded-full bg-white border-4 border-black z-10 -translate-x-[calc(50%+1px)] md:-translate-x-1/2 mt-1.5 md:mt-0" />
 
             {/* Content */}
-            <div className={cn(
-              "w-full md:w-1/2 px-4 md:px-12",
-              index % 2 === 0 ? "text-left" : "md:text-right"
-            )}>
+            <div
+              className={cn(
+                "w-full md:w-1/2 px-4 md:px-12",
+                index % 2 === 0 ? "text-left" : "md:text-right",
+              )}
+            >
               <span className="text-6xl font-bold text-white/5 absolute -top-8 md:-top-12 left-4 md:left-auto select-none">
                 {item.year}
               </span>
