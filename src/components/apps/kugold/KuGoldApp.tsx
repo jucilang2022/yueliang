@@ -19,6 +19,18 @@ function formatDate(dateIso: string) {
   return d.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
 }
 
+function formatDateTime(dateIso: string) {
+  const d = new Date(dateIso);
+  return d.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
 export function KuGoldApp() {
   const [records, setRecords] = useState<GoldRecord[]>(() => {
     const saved = localStorage.getItem("kugold_records");
@@ -35,6 +47,11 @@ export function KuGoldApp() {
   const [recordType, setRecordType] = useState<"buy" | "sell">("buy");
   const [pricePerGram, setPricePerGram] = useState("");
   const [grams, setGrams] = useState("");
+  const [sellError, setSellError] = useState<string | null>(null);
+  const [currentPricePerGram, setCurrentPricePerGram] = useState(() => localStorage.getItem("kugold_current_price") ?? "");
+  const [currentPriceUpdatedAtIso, setCurrentPriceUpdatedAtIso] = useState(
+    () => localStorage.getItem("kugold_current_price_updated_at") ?? "",
+  );
   const [date, setDate] = useState(() => {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -46,6 +63,11 @@ export function KuGoldApp() {
   useEffect(() => {
     localStorage.setItem("kugold_records", JSON.stringify(records));
   }, [records]);
+
+  useEffect(() => {
+    localStorage.setItem("kugold_current_price", currentPricePerGram);
+    localStorage.setItem("kugold_current_price_updated_at", currentPriceUpdatedAtIso);
+  }, [currentPricePerGram, currentPriceUpdatedAtIso]);
 
   const derived = useMemo(() => {
     // 完全按照用户录入顺序计算（records 最新在前，这里反转为从最早到最新）
@@ -97,6 +119,18 @@ export function KuGoldApp() {
     return { positionGrams, positionCost, avgCostPerGram, buyTotal, sellTotal, realizedPnl };
   }, [records]);
 
+  const currentPriceNumber = useMemo(() => {
+    const n = parseFloat(currentPricePerGram);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }, [currentPricePerGram]);
+
+  const unrealizedPnl = useMemo(() => {
+    if (currentPriceNumber == null) return 0;
+    return (currentPriceNumber - derived.avgCostPerGram) * derived.positionGrams;
+  }, [currentPriceNumber, derived.avgCostPerGram, derived.positionGrams]);
+
+  const totalPnl = derived.realizedPnl + unrealizedPnl;
+
   const recordTypeLabel = recordType === "buy" ? "买入" : "卖出";
 
   const handleAdd = (e: React.FormEvent) => {
@@ -106,6 +140,14 @@ export function KuGoldApp() {
     const parsedPricePerGram = parseFloat(pricePerGram);
     const parsedGrams = parseFloat(grams);
     if (!Number.isFinite(parsedPricePerGram) || !Number.isFinite(parsedGrams)) return;
+
+    if (recordType === "sell") {
+      const sellGramsAbs = Math.abs(parsedGrams);
+      if (sellGramsAbs > derived.positionGrams + 1e-9) {
+        setSellError(`卖出克数不能超过当前持仓（最多可卖 ${derived.positionGrams.toFixed(2)}g）`);
+        return;
+      }
+    }
 
     const signedGrams = recordType === "buy" ? parsedGrams : -parsedGrams;
     const newRecord: GoldRecord = {
@@ -123,6 +165,7 @@ export function KuGoldApp() {
     setRecordType("buy");
     setPricePerGram("");
     setGrams("");
+    setSellError(null);
   };
 
   const handleDelete = (id: string) => {
@@ -157,9 +200,9 @@ export function KuGoldApp() {
             </div>
             <div className="text-2xl font-semibold tracking-tight">
               <span className="text-sm text-zinc-400 mr-1">¥</span>
-              <span className={cn(derived.realizedPnl >= 0 ? "text-emerald-300" : "text-red-300")}>
-                {derived.realizedPnl >= 0 ? "+" : ""}
-                {formatMoney(derived.realizedPnl)}
+              <span className={cn(totalPnl >= 0 ? "text-emerald-300" : "text-red-300")}>
+                {totalPnl >= 0 ? "+" : ""}
+                {formatMoney(totalPnl)}
               </span>
             </div>
           </Card>
@@ -200,6 +243,32 @@ export function KuGoldApp() {
             <div className="text-2xl font-semibold tracking-tight">
               <span className="text-sm text-zinc-400 mr-1">¥</span>
               {formatMoney(derived.avgCostPerGram)}
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3">
+          <Card>
+            <div className="flex items-center text-zinc-400 mb-3 font-medium text-sm">
+              <Coins className="w-4 h-4 mr-2 text-amber-500" />
+              当前金价（元/克）
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={currentPricePerGram}
+                onChange={(e) => {
+                  setCurrentPricePerGram(e.target.value);
+                  setCurrentPriceUpdatedAtIso(new Date().toISOString());
+                }}
+                className="w-full bg-zinc-950/40 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white/10 transition-shadow text-base font-medium"
+                placeholder="例如：650"
+              />
+              <div className="text-xs text-zinc-400 font-medium whitespace-nowrap">
+                更新时间：{currentPriceUpdatedAtIso ? formatDateTime(currentPriceUpdatedAtIso) : "—"}
+              </div>
             </div>
           </Card>
         </div>
@@ -276,10 +345,16 @@ export function KuGoldApp() {
                       min="0"
                       required
                       value={grams}
-                      onChange={(e) => setGrams(e.target.value)}
+                      onChange={(e) => {
+                        setGrams(e.target.value);
+                        setSellError(null);
+                      }}
                       className="w-full bg-zinc-950/40 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white/10 transition-shadow text-base font-medium"
                       placeholder="例如：10"
                     />
+                    {sellError && recordType === "sell" && (
+                      <div className="text-xs text-red-300 font-medium">{sellError}</div>
+                    )}
                   </div>
                 </div>
 
