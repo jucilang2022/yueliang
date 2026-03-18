@@ -3,8 +3,6 @@ import { AnimatePresence } from "framer-motion";
 import { Dock } from "./components/layout/Dock";
 import { Noise } from "./components/ui/Noise";
 import { HomeView } from "./components/views/HomeView";
-import { ProjectsView } from "./components/views/ProjectsView";
-import { AboutView } from "./components/views/AboutView";
 import { ContactView } from "./components/views/ContactView";
 
 function App() {
@@ -14,10 +12,6 @@ function App() {
     switch (currentView) {
       case "home":
         return <HomeView key="home" />;
-      case "projects":
-        return <ProjectsView key="projects" />;
-      case "about":
-        return <AboutView key="about" />;
       case "contact":
         return <ContactView key="contact" />;
       default:
