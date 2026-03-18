@@ -4,6 +4,7 @@ import { Dock } from "./components/layout/Dock";
 import { Noise } from "./components/ui/Noise";
 import { HomeView } from "./components/views/HomeView";
 import { ContactView } from "./components/views/ContactView";
+import { AppView } from "./components/views/AppView";
 
 function App() {
   const [currentView, setCurrentView] = useState("home");
@@ -12,6 +13,8 @@ function App() {
     switch (currentView) {
       case "home":
         return <HomeView key="home" />;
+      case "app":
+        return <AppView key="app" />;
       case "contact":
         return <ContactView key="contact" />;
       default:
@@ -22,7 +25,7 @@ function App() {
   return (
     <main className="min-h-screen bg-black text-white selection:bg-purple-500/30 selection:text-purple-200 overflow-x-hidden">
       <Noise />
-      
+
       {/* Main Content Area with Transitions */}
       <AnimatePresence mode="wait">
         {renderView()}
