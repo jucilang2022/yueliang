@@ -48,7 +48,8 @@ export function KuGoldApp() {
   }, [records]);
 
   const derived = useMemo(() => {
-    const ordered = [...records].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // 完全按照用户录入顺序计算（records 最新在前，这里反转为从最早到最新）
+    const ordered = [...records].reverse();
 
     let positionGrams = 0;
     let positionCost = 0; // 持仓成本（仅对当前持仓）
@@ -140,7 +141,7 @@ export function KuGoldApp() {
           <Card>
             <div className="flex items-center text-zinc-400 mb-2 font-medium text-sm">
               <Database className="w-4 h-4 mr-2 text-amber-500" />
-              持有总克数
+              持有克数
             </div>
             <div className="text-2xl font-semibold tracking-tight">
               {derived.positionGrams.toFixed(2)}
@@ -151,7 +152,7 @@ export function KuGoldApp() {
           <Card>
             <div className="flex items-center text-zinc-400 mb-2 font-medium text-sm">
               <DollarSign className="w-4 h-4 mr-2 text-green-600" />
-              买入总投入
+              买入金额
             </div>
             <div className="text-2xl font-semibold tracking-tight">
               <span className="text-sm text-zinc-400 mr-1">¥</span>
@@ -162,7 +163,7 @@ export function KuGoldApp() {
           <Card>
             <div className="flex items-center text-zinc-400 mb-2 font-medium text-sm">
               <Activity className="w-4 h-4 mr-2 text-blue-600" />
-              已实现盈亏
+              目前盈亏
             </div>
             <div className="text-2xl font-semibold tracking-tight">
               <span className="text-sm text-zinc-400 mr-1">¥</span>
@@ -178,7 +179,7 @@ export function KuGoldApp() {
           <Card>
             <div className="flex items-center text-zinc-400 mb-2 font-medium text-sm">
               <ArrowRight className="w-4 h-4 mr-2 text-sky-400" />
-              卖出总回笼
+              卖出金额
             </div>
             <div className="text-2xl font-semibold tracking-tight">
               <span className="text-sm text-zinc-400 mr-1">¥</span>
