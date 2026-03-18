@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
-import { ArrowRight, Calendar, Database, DollarSign, Plus, Activity } from "lucide-react";
+import { ArrowRight, Database, DollarSign, Plus, Activity } from "lucide-react";
 import { Hero } from "../sections/Hero";
 import { cn } from "../../lib/utils";
 
@@ -11,6 +10,20 @@ interface GoldRecord {
   pricePerGram: number;
   grams: number;
   date: string;
+}
+
+function formatDate(date: string | Date) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatTime(date: Date) {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 export function HomeView() {
@@ -32,7 +45,7 @@ export function HomeView() {
             {/* 顶部状态栏 */}
             <div className="h-10 flex items-center justify-between px-6 text-xs text-white/70 bg-black/40 backdrop-blur-lg">
               <span>KuGold · 酷金记</span>
-              <span>{format(new Date(), "HH:mm")}</span>
+              <span>{formatTime(new Date())}</span>
             </div>
 
             {/* App 内容区域：嵌入酷金记核心功能 */}
@@ -61,7 +74,7 @@ function KuGoldMiniApp() {
   const [recordType, setRecordType] = useState<"buy" | "sell">("buy");
   const [pricePerGram, setPricePerGram] = useState("");
   const [grams, setGrams] = useState("");
-  const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = useState(() => formatDate(new Date()));
 
   useEffect(() => {
     localStorage.setItem("kugold_records", JSON.stringify(records));
@@ -84,7 +97,7 @@ function KuGoldMiniApp() {
     const signedGrams = recordType === "buy" ? parsedGrams : -parsedGrams;
 
     const newRecord: GoldRecord = {
-      id: crypto.randomUUID(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       type: recordType,
       pricePerGram: parsedPricePerGram,
       grams: signedGrams,
@@ -304,7 +317,7 @@ function KuGoldMiniApp() {
                     </div>
                     <div className="text-[11px] text-white/40 flex items-center gap-2">
                       <span>
-                        {format(new Date(record.date), "yyyy-MM-dd")}
+                        {formatDate(record.date)}
                       </span>
                       <span className="opacity-60">
                         本笔 ¥
