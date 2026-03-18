@@ -52,6 +52,21 @@ export function Hero() {
           <br />
           构建极致的数字体验。
         </motion.p>
+
+        {/* Signature */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="flex items-center gap-3"
+        >
+          <div className="h-px w-10 bg-gradient-to-r from-white/50 to-transparent" />
+          <div className="text-sm tracking-widest text-gray-400">
+            <span className="text-white/90">XIAOKU</span>
+            <span className="mx-2 text-white/10">/</span>
+            <span className="text-gray-500">小酷</span>
+          </div>
+        </motion.div>
       </div>
 
       {/* Scroll Indicator */}
