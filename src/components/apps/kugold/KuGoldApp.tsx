@@ -138,7 +138,7 @@ export function KuGoldApp() {
 
       <main className="px-4 pb-6 space-y-6">
         {/* Row 1 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Card>
             <div className="flex items-center text-zinc-400 mb-2 font-medium text-sm">
               <Database className="w-4 h-4 mr-2 text-amber-500" />
@@ -166,7 +166,7 @@ export function KuGoldApp() {
         </div>
 
         {/* Row 2 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Card>
             <div className="flex items-center text-zinc-400 mb-2 font-medium text-sm">
               <DollarSign className="w-4 h-4 mr-2 text-green-600" />
