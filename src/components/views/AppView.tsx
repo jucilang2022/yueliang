@@ -52,7 +52,7 @@ export function AppView() {
                 <div className="text-[10px] text-gray-500">KuOS</div>
               </div>
 
-              <div className="px-5 pb-5">
+              <div className={cn(activeAppId === null ? "px-5 pb-5" : "px-0 pb-0")}>
                 <AnimatePresence mode="wait">
                   {activeAppId === null ? (
                     <motion.div
@@ -105,7 +105,7 @@ export function AppView() {
                       transition={{ duration: 0.25 }}
                       className="min-h-[520px]"
                     >
-                      <div className="flex items-center gap-2 mb-4">
+                      <div className="px-5 pt-3 pb-3 flex items-center gap-2 border-b border-white/10">
                         <button
                           onClick={() => setActiveAppId(null)}
                           className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
@@ -115,9 +115,7 @@ export function AppView() {
                         </button>
                       </div>
 
-                      <div className="rounded-3xl border border-white/10 bg-[#F5F5F7] text-[#1D1D1F] overflow-hidden">
-                        <KuGoldApp />
-                      </div>
+                      <KuGoldApp />
                     </motion.div>
                   )}
                 </AnimatePresence>
