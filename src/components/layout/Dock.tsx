@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { Home, Mail } from "lucide-react";
+import { Home, Smartphone, Mail } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 const navItems = [
   { id: 'home', icon: Home, label: 'Home' },
+  { id: 'app', icon: Smartphone, label: 'App' },
   { id: 'contact', icon: Mail, label: 'Contact' },
 ];
 
