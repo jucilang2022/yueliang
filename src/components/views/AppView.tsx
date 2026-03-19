@@ -1,11 +1,14 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, AppWindow, Coins } from "lucide-react";
+import { ArrowLeft, AppWindow, BookOpen, CheckCircle2, Coins, Languages } from "lucide-react";
 import { useMemo, useState } from "react";
 import { cn } from "../../lib/utils";
 import { KuGoldApp } from "../apps/kugold/KuGoldApp";
+import { NeonNotesApp } from "../apps/notes/NeonNotesApp";
+import { MiniHabitApp } from "../apps/habit/MiniHabitApp";
+import { EnglishLabApp } from "../apps/english/EnglishLabApp";
 
 export function AppView() {
-  const [activeAppId, setActiveAppId] = useState<null | "kugold">(null);
+  const [activeAppId, setActiveAppId] = useState<null | "kugold" | "notes" | "habit" | "english">(null);
 
   const apps = useMemo(
     () => [
@@ -15,6 +18,27 @@ export function AppView() {
         subtitle: "KuGold",
         icon: Coins,
         iconBg: "from-amber-300/20 to-yellow-500/20",
+      },
+      {
+        id: "english" as const,
+        name: "English Lab",
+        subtitle: "Words",
+        icon: Languages,
+        iconBg: "from-sky-300/20 to-indigo-500/20",
+      },
+      {
+        id: "notes" as const,
+        name: "Neon Notes",
+        subtitle: "Markdown",
+        icon: BookOpen,
+        iconBg: "from-fuchsia-300/20 to-purple-500/20",
+      },
+      {
+        id: "habit" as const,
+        name: "Mini Habit",
+        subtitle: "Heatmap",
+        icon: CheckCircle2,
+        iconBg: "from-emerald-300/20 to-sky-500/20",
       },
     ],
     [],
@@ -92,13 +116,13 @@ export function AppView() {
                       <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-4">
                         <div className="text-sm font-semibold text-white">提示</div>
                         <div className="text-xs text-gray-400 mt-1 leading-relaxed">
-                          点击「酷金记」进入独立详情页，完整记账功能会在里面呈现。
+                          点击任意应用进入详情页，所有数据均保存在当前浏览器的 localStorage。
                         </div>
                       </div>
                     </motion.div>
                   ) : (
                     <motion.div
-                      key="kugold"
+                      key={activeAppId ?? "app"}
                       initial={{ opacity: 0, x: 12 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -12 }}
@@ -115,7 +139,10 @@ export function AppView() {
                         </button>
                       </div>
 
-                      <KuGoldApp />
+                      {activeAppId === "kugold" && <KuGoldApp />}
+                      {activeAppId === "notes" && <NeonNotesApp />}
+                      {activeAppId === "habit" && <MiniHabitApp />}
+                      {activeAppId === "english" && <EnglishLabApp />}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -128,14 +155,8 @@ export function AppView() {
         <div className="text-gray-300">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <div className="text-lg font-semibold text-white">已内置应用</div>
-            <ul className="mt-4 space-y-3">
-              <li>
-                <div className="font-medium text-white">酷金记 KuGold</div>
-                <div className="text-sm text-gray-400 mt-1">
-                  记录买入/卖出、持有克数、总投入与平均成本（数据本地保存）。
-                </div>
-              </li>
-            </ul>
+            {/* 留空：后续再决定展示哪些内容 */}
+            <ul className="mt-4 space-y-3" />
           </div>
         </div>
       </div>
