@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Github, Twitter, Mail, Instagram, Facebook, Disc } from "lucide-react";
 import { SiDouban, SiSteam } from "react-icons/si";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "../../lib/utils";
 
 const socials = [
@@ -66,6 +66,10 @@ const socials = [
 export function ContactView() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  // 区分“悬停展开”和“点击手动展开”
+  // 手动展开期间，不要因为鼠标离开容器而立刻收回，避免抖动感。
+  const [isManualExpanded, setIsManualExpanded] = useState(false);
+  const collapseTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
 
   const activeSocial = socials.find(s => s.id === activeId);
 
@@ -77,6 +81,53 @@ export function ContactView() {
       y: Math.sin(angle) * radius,
     };
   };
+
+  const radius = 140;
+  // Tailwind 的 w-14/h-14 = 56px，圆心对齐时需要减去一半尺寸
+  const halfIcon = 28;
+  const iconPositions = socials.map((_, index) => getPosition(index, socials.length, radius));
+
+  const clearCollapseTimeout = () => {
+    if (collapseTimeoutRef.current) {
+      window.clearTimeout(collapseTimeoutRef.current);
+      collapseTimeoutRef.current = null;
+    }
+  };
+
+  const requestExpandByHover = () => {
+    if (isManualExpanded) return;
+    clearCollapseTimeout();
+    setIsExpanded(true);
+  };
+
+  const requestCollapseByHover = () => {
+    if (isManualExpanded) return;
+    clearCollapseTimeout();
+    // 给一点点延迟，避免用户从中心点“移动到图标上”时触发鼠标离开导致瞬间收回
+    collapseTimeoutRef.current = window.setTimeout(() => {
+      setIsExpanded(false);
+      setActiveId(null);
+    }, 180);
+  };
+
+  const handleToggleManual = () => {
+    clearCollapseTimeout();
+    if (isManualExpanded) {
+      setIsExpanded(false);
+      setIsManualExpanded(false);
+      setActiveId(null);
+      return;
+    }
+
+    setIsExpanded(true);
+    setIsManualExpanded(true);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (collapseTimeoutRef.current) window.clearTimeout(collapseTimeoutRef.current);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden pt-20 pb-32">
@@ -96,12 +147,9 @@ export function ContactView() {
       {/* The Vortex Container */}
       <div
         className="relative w-[300px] h-[300px] md:w-[400px] md:h-[400px] flex items-center justify-center"
-        onMouseEnter={() => setIsExpanded(true)}
-        onMouseLeave={() => {
-          setIsExpanded(false);
-          setActiveId(null);
-        }}
-        onClick={() => setIsExpanded(!isExpanded)} // Mobile toggle
+        onMouseEnter={requestExpandByHover}
+        onMouseLeave={requestCollapseByHover}
+        onClick={handleToggleManual} // Mobile toggle
       >
         {/* Core Center Button */}
         <motion.div
@@ -116,42 +164,68 @@ export function ContactView() {
         </motion.div>
 
         {/* Orbiting Icons */}
-        {socials.map((social, index) => {
-          const pos = getPosition(index, socials.length, 140); // 140px radius
-
-          return (
+        <motion.div
+          className="relative w-full h-full flex items-center justify-center"
+          initial={false}
+          animate={isExpanded ? "expanded" : "collapsed"}
+          variants={{
+            expanded: {
+              transition: {
+                staggerChildren: 0.045,
+                delayChildren: 0.04,
+              },
+            },
+            collapsed: {
+              transition: {
+                staggerChildren: 0.025,
+                staggerDirection: -1,
+              },
+            },
+          }}
+        >
+          {socials.map((social, index) => (
             <motion.a
               key={social.id}
               href={social.url}
               target="_blank"
               rel="noopener noreferrer"
+              custom={index}
               // Prevent clicks when collapsed
-              style={{ pointerEvents: isExpanded ? "auto" : "none" }}
-              // Use layout to smooth out any layout shifts, but here we rely on absolute positioning
-              initial={false} // Skip initial animation on mount to prevent flash, but we want movement on interaction
-              animate={{
-                x: isExpanded ? pos.x : 0,
-                y: isExpanded ? pos.y : 0,
-                scale: isExpanded ? 1 : 0.3, // Start slightly larger to be seen immediately
-                opacity: isExpanded ? 1 : 0,
+              style={{
+                pointerEvents: isExpanded ? "auto" : "none",
+                top: "50%",
+                left: "50%",
               }}
-              transition={{
-                type: "tween",
-                ease: "easeOut",
-                duration: 0.25, // Extremely fast (1.5x faster than 0.4s)
-                delay: 0
+              initial={false}
+              variants={{
+                collapsed: {
+                  x: -halfIcon,
+                  y: -halfIcon,
+                  scale: 0.3,
+                  opacity: 0,
+                  transition: { type: "spring", stiffness: 540, damping: 42 },
+                },
+                expanded: {
+                  x: iconPositions[index].x - halfIcon,
+                  y: iconPositions[index].y - halfIcon,
+                  scale: 1,
+                  opacity: 1,
+                  transition: { type: "spring", stiffness: 620, damping: 34 },
+                },
               }}
               onMouseEnter={() => setActiveId(social.id)}
               onMouseLeave={() => setActiveId(null)}
+              whileHover={{ scale: 1.25, zIndex: 40 }}
+              whileTap={{ scale: 0.95 }}
               className={cn(
-                "absolute w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg cursor-pointer z-30 transition-transform hover:scale-125 hover:z-40",
+                "absolute w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg cursor-pointer z-30",
                 social.color
               )}
             >
               <social.icon className="w-6 h-6" />
             </motion.a>
-          );
-        })}
+          ))}
+        </motion.div>
 
         {/* Connection Lines (Optional decorative) */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20 animate-spin-slow">
