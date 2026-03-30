@@ -109,6 +109,8 @@ export function KuGoldApp() {
       if (positionGrams <= 0) {
         // 没有持仓时卖出：按 0 成本计算盈亏（避免 NaN）
         realizedPnl += cash;
+        // 卖出需要收取千分之四的手续费（按成交额计算）
+        realizedPnl -= cash * 0.004;
         continue;
       }
 
@@ -124,6 +126,9 @@ export function KuGoldApp() {
         // 超卖部分按 0 成本计入已实现盈亏
         realizedPnl += r.pricePerGram * extraGrams;
       }
+
+      // 卖出部分统一收取千分之四手续费（按本次成交金额计算）
+      realizedPnl -= cash * 0.004;
     }
 
     const avgCostPerGram = positionGrams > 0 ? positionCost / positionGrams : 0;
