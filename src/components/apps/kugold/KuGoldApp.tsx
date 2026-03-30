@@ -142,7 +142,9 @@ export function KuGoldApp() {
 
   const unrealizedPnl = useMemo(() => {
     if (currentPriceNumber == null) return 0;
-    return (currentPriceNumber - derived.avgCostPerGram) * derived.positionGrams;
+    const grossProceeds = currentPriceNumber * derived.positionGrams; // 若现在卖出会收到的卖出额
+    const estimatedSellFee = grossProceeds * 0.004; // 千分之四手续费
+    return (currentPriceNumber - derived.avgCostPerGram) * derived.positionGrams - estimatedSellFee;
   }, [currentPriceNumber, derived.avgCostPerGram, derived.positionGrams]);
 
   const totalPnl = derived.realizedPnl + unrealizedPnl;
