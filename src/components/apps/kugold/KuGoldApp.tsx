@@ -148,6 +148,8 @@ export function KuGoldApp() {
   }, [currentPriceNumber, derived.avgCostPerGram, derived.positionGrams]);
 
   const totalPnl = derived.realizedPnl + unrealizedPnl;
+  const unrealizedOperator = unrealizedPnl >= 0 ? "+" : "-";
+  const unrealizedAbs = Math.abs(unrealizedPnl);
 
   const recordTypeLabel = recordType === "buy" ? "买入" : "卖出";
 
@@ -369,6 +371,9 @@ export function KuGoldApp() {
                 {totalPnl >= 0 ? "+" : ""}
                 {formatMoney(totalPnl)}
               </span>
+            </div>
+            <div className="mt-2 text-xs text-zinc-400 leading-relaxed">
+              {formatMoney(derived.realizedPnl)} {unrealizedOperator} {formatMoney(unrealizedAbs)}
             </div>
           </Card>
         </div>
@@ -783,4 +788,3 @@ export function KuGoldApp() {
 function Card({ children }: { children: React.ReactNode }) {
   return <div className="bg-zinc-900/60 p-5 rounded-[20px] shadow-sm border border-white/10">{children}</div>;
 }
-
