@@ -156,7 +156,7 @@ export function AppView() {
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <div className="text-lg font-semibold text-white">已内置应用</div>
             {/* 留空：后续再决定展示哪些内容 */}
-            <ul className="mt-4 space-y-3" />
+  
           </div>
         </div>
       </div>
