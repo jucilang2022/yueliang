@@ -1,6 +1,9 @@
-import React, { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { BookOpen, CheckCircle2, ChevronDown, Plus, Search, Tag as TagIcon, Trash2 } from "lucide-react";
-import { cn } from "../../../lib/utils";
+import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/Card";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useLocalStorage } from "@/lib/useLocalStorage";
 
 type WordItem = {
   id: string;
@@ -34,7 +37,7 @@ type EnglishLabState = {
   phrases: PhraseItem[];
 };
 
-const STORAGE_KEY = "english_lab_v1";
+const STORAGE_KEY = "***";
 const SCHEMA_VERSION = 1;
 
 type EnglishLabExportPayload = {
@@ -57,75 +60,31 @@ function formatShortDate(iso: string) {
   return d.toLocaleString("zh-CN", { month: "short", day: "2-digit" });
 }
 
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("bg-zinc-900/60 p-5 rounded-[20px] shadow-sm border border-white/10", className)}>{children}</div>;
-}
+const DEFAULT_STATE: EnglishLabState = {
+  schemaVersion: SCHEMA_VERSION,
+  updatedAtIso: "",
+  words: [],
+  phrases: [],
+};
 
-function ConfirmModal({
-  open,
-  title,
-  description,
-  confirmText,
-  cancelText,
-  onConfirm,
-  onCancel,
-}: {
-  open: boolean;
-  title: string;
-  description: string;
-  confirmText: string;
-  cancelText: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75">
-      <div className="w-[92%] max-w-sm rounded-[20px] bg-zinc-900/95 border border-white/10 shadow-2xl p-5">
-        <div className="text-white font-semibold text-lg">{title}</div>
-        <div className="text-sm text-zinc-400 mt-2 leading-relaxed">{description}</div>
-        <div className="mt-5 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 rounded-xl bg-zinc-950/40 border border-white/10 text-white/90 hover:bg-zinc-950/60 transition-colors text-sm font-semibold"
-          >
-            {cancelText}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="px-4 py-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-100 hover:bg-red-500/20 transition-colors text-sm font-semibold"
-          >
-            {confirmText}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+function normalizeInitialState(saved: unknown): EnglishLabState {
+  try {
+    if (!saved || typeof saved !== "object") return DEFAULT_STATE;
+    const parsed = saved as Record<string, unknown>;
+    const words: WordItem[] = Array.isArray(parsed.words) ? parsed.words : [];
+    const phrases: PhraseItem[] = Array.isArray(parsed.phrases) ? parsed.phrases : [];
+    return { schemaVersion: SCHEMA_VERSION, updatedAtIso: new Date().toISOString(), words, phrases };
+  } catch {
+    return DEFAULT_STATE;
+  }
 }
 
 export function EnglishLabApp() {
   const [tab, setTab] = useState<"words" | "phrases" | "quiz">("words");
-  const [state, setState] = useState<EnglishLabState>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) {
-        return { schemaVersion: SCHEMA_VERSION, updatedAtIso: new Date().toISOString(), words: [], phrases: [] };
-      }
-      const parsed = JSON.parse(saved) as any;
-      const words: WordItem[] = Array.isArray(parsed.words) ? parsed.words : [];
-      const phrases: PhraseItem[] = Array.isArray(parsed.phrases) ? parsed.phrases : [];
-      return { schemaVersion: SCHEMA_VERSION, updatedAtIso: new Date().toISOString(), words, phrases };
-    } catch {
-      return { schemaVersion: SCHEMA_VERSION, updatedAtIso: new Date().toISOString(), words: [], phrases: [] };
-    }
-  });
+  const [state, setState] = useLocalStorage<EnglishLabState>(STORAGE_KEY, DEFAULT_STATE);
 
   const persist = (next: EnglishLabState) => {
-    const payload: EnglishLabState = { ...next, schemaVersion: SCHEMA_VERSION, updatedAtIso: new Date().toISOString() };
-    setState(payload);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    setState({ ...next, schemaVersion: SCHEMA_VERSION, updatedAtIso: new Date().toISOString() });
   };
 
   const exportData = () => {
@@ -158,11 +117,11 @@ export function EnglishLabApp() {
     const normalized: WordItem[] = [];
     for (const [index, w] of raw.entries()) {
       if (!w || typeof w !== "object") continue;
-      const ww = w as any;
+      const ww = w as Record<string, unknown>;
       const id = typeof ww.id === "string" && ww.id ? ww.id : `word-import-${Date.now()}-${index}`;
       const word = typeof ww.word === "string" ? ww.word : "";
       const meaningCN = typeof ww.meaningCN === "string" ? ww.meaningCN : "";
-      const tags = Array.isArray(ww.tags) ? ww.tags.filter((x: any) => typeof x === "string") : [];
+      const tags = Array.isArray(ww.tags) ? ww.tags.filter((x: unknown) => typeof x === "string") : [];
       const exampleEN = typeof ww.exampleEN === "string" ? ww.exampleEN : "";
       const exampleCN = typeof ww.exampleCN === "string" ? ww.exampleCN : "";
       const starred = Boolean(ww.starred);
@@ -192,11 +151,11 @@ export function EnglishLabApp() {
     const normalized: PhraseItem[] = [];
     for (const [index, p] of raw.entries()) {
       if (!p || typeof p !== "object") continue;
-      const pp = p as any;
+      const pp = p as Record<string, unknown>;
       const id = typeof pp.id === "string" && pp.id ? pp.id : `phrase-import-${Date.now()}-${index}`;
       const phrase = typeof pp.phrase === "string" ? pp.phrase : "";
       const explanationCN = typeof pp.explanationCN === "string" ? pp.explanationCN : "";
-      const tags = Array.isArray(pp.tags) ? pp.tags.filter((x: any) => typeof x === "string") : [];
+      const tags = Array.isArray(pp.tags) ? pp.tags.filter((x: unknown) => typeof x === "string") : [];
       const exampleEN = typeof pp.exampleEN === "string" ? pp.exampleEN : "";
       const exampleCN = typeof pp.exampleCN === "string" ? pp.exampleCN : "";
       const createdAtIso = typeof pp.createdAtIso === "string" ? pp.createdAtIso : new Date().toISOString();
@@ -222,7 +181,7 @@ export function EnglishLabApp() {
       const text = await file.text();
       const parsed = JSON.parse(text) as unknown;
       if (!parsed || typeof parsed !== "object") throw new Error("文件格式错误：不是 JSON 对象");
-      const payload = parsed as any;
+      const payload = parsed as Record<string, unknown>;
 
       const importedWords = normalizeImportedWords(payload.words);
       const importedPhrases = normalizeImportedPhrases(payload.phrases);
@@ -249,21 +208,19 @@ export function EnglishLabApp() {
       for (const p of state.phrases) phrasesMap.set(p.id, p);
       for (const p of importedPhrases) phrasesMap.set(p.id, p);
 
-      const next: EnglishLabState = {
-        schemaVersion: SCHEMA_VERSION,
-        updatedAtIso: new Date().toISOString(),
+      persist({
+        ...state,
         words: Array.from(wordsMap.values()),
         phrases: Array.from(phrasesMap.values()),
-      };
-      persist(next);
+      });
       setTransferStatus({
         type: "success",
         message: `导入成功：合并 ${importedWords.length} 个单词，${importedPhrases.length} 个短语`,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       setTransferStatus({
         type: "error",
-        message: e?.message ? String(e.message) : "导入失败：解析文件失败或格式不符合要求",
+        message: e instanceof Error ? e.message : "导入失败：解析文件失败或格式不符合要求",
       });
     } finally {
       setIsImporting(false);
@@ -273,13 +230,7 @@ export function EnglishLabApp() {
 
   const applyReplaceImport = () => {
     if (!pendingReplaceState) return;
-    const next: EnglishLabState = {
-      schemaVersion: SCHEMA_VERSION,
-      updatedAtIso: new Date().toISOString(),
-      words: pendingReplaceState.words,
-      phrases: pendingReplaceState.phrases,
-    };
-    persist(next);
+    persist({ ...state, words: pendingReplaceState.words, phrases: pendingReplaceState.phrases });
     setTransferStatus({
       type: "success",
       message: `导入成功：已覆盖（${pendingReplaceState.words.length} 个单词，${pendingReplaceState.phrases.length} 个短语）`,
@@ -468,7 +419,6 @@ export function EnglishLabApp() {
 
 function WordVault({ words, onChange }: { words: WordItem[]; onChange: (next: WordItem[]) => void }) {
   const [query, setQuery] = useState("");
-  const [selectedTag] = useState<string | null>(null);
   const [mode, setMode] = useState<"list" | "edit">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -484,13 +434,10 @@ function WordVault({ words, onChange }: { words: WordItem[]; onChange: (next: Wo
   const [bulkStatus, setBulkStatus] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-  // 标签过滤逻辑已内联在 UI 中，后续如果要做“标签管理页”可在这里聚合标签
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return words
       .filter((w) => {
-        if (selectedTag && !w.tags.includes(selectedTag)) return false;
         if (!q) return true;
         const hay = `${w.word}\n${w.meaningCN}\n${w.tags.join(",")}\n${w.exampleEN}\n${w.exampleCN}`.toLowerCase();
         return hay.includes(q);
@@ -499,7 +446,7 @@ function WordVault({ words, onChange }: { words: WordItem[]; onChange: (next: Wo
         if (a.starred !== b.starred) return a.starred ? -1 : 1;
         return new Date(b.updatedAtIso).getTime() - new Date(a.updatedAtIso).getTime();
       });
-  }, [words, query, selectedTag]);
+  }, [words, query]);
 
   const startNew = () => {
     setEditingId(null);
@@ -650,19 +597,6 @@ function WordVault({ words, onChange }: { words: WordItem[]; onChange: (next: Wo
                 <Plus className="w-4 h-4" />
                 新增单词
               </button>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <div className="text-xs text-zinc-500">
-                {selectedTag ? (
-                  <>
-                    当前标签：<span className="text-sky-200">#{selectedTag}</span>
-                  </>
-                ) : (
-                  "当前标签：全部"
-                )}
-              </div>
-              {/* 预留将来做“标签管理/筛选”独立入口 */}
             </div>
           </Card>
 
@@ -898,6 +832,7 @@ function WordVault({ words, onChange }: { words: WordItem[]; onChange: (next: Wo
         description="确定删除这个单词吗？此操作不可撤销。"
         confirmText="删除"
         cancelText="取消"
+        confirmDestructive
         onCancel={() => {
           setDeleteOpen(false);
           setPendingDeleteId(null);
@@ -1199,6 +1134,7 @@ function PhraseDeck({ phrases, onChange }: { phrases: PhraseItem[]; onChange: (n
         description="确定删除这个短语吗？此操作不可撤销。"
         confirmText="删除"
         cancelText="取消"
+        confirmDestructive
         onCancel={() => {
           setDeleteOpen(false);
           setPendingDeleteId(null);
@@ -1330,4 +1266,3 @@ function MiniQuiz({
     </Card>
   );
 }
-
