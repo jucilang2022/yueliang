@@ -7,13 +7,17 @@ import { useCallback, useSyncExternalStore } from "react";
  * - 数据变更时自动写入 localStorage
  * - 支持跨标签页同步（storage 事件）
  *
- * @param key   localStorage 键名
+ * @param key           localStorage 键名
  * @param defaultValue  默认值（localStorage 无数据或解析失败时使用）
+ * @param migrate       可选迁移函数，用于将旧格式数据转换为新格式
  */
-export function useLocalStorage<T>(key: string, defaultValue: T) {
+export function useLocalStorage<T>(
+  key: string,
+  defaultValue: T,
+  migrate?: (raw: unknown) => T,
+) {
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
-      // 监听同源其他标签页的 storage 变化
       window.addEventListener("storage", onStoreChange);
       return () => window.removeEventListener("storage", onStoreChange);
     },
@@ -24,11 +28,13 @@ export function useLocalStorage<T>(key: string, defaultValue: T) {
     try {
       const raw = localStorage.getItem(key);
       if (raw === null) return defaultValue;
-      return JSON.parse(raw) as T;
+      const parsed = JSON.parse(raw) as unknown;
+      if (migrate) return migrate(parsed);
+      return parsed as T;
     } catch {
       return defaultValue;
     }
-  }, [key, defaultValue]);
+  }, [key, defaultValue, migrate]);
 
   const getServerSnapshot = useCallback((): T => defaultValue, [defaultValue]);
 

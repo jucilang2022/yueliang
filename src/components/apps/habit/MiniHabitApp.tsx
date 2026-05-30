@@ -1,6 +1,9 @@
-import React, { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, CalendarDays, CheckCircle2, Minus, Plus } from "lucide-react";
-import { cn } from "../../../lib/utils";
+import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/Card";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useLocalStorage } from "@/lib/useLocalStorage";
 
 type Frequency = "daily" | "weekly";
 
@@ -14,12 +17,18 @@ type HabitProject = {
   completions: Record<string, boolean>;
 };
 
-const STORAGE_KEY = "mini_habit_v1";
+const STORAGE_KEY = "***";
 const SCHEMA_VERSION = 2;
 
 type MiniHabitExportPayload = {
   schemaVersion: number;
   exportedAtIso: string;
+  projects: HabitProject[];
+};
+
+type StoredData = {
+  schemaVersion: number;
+  updatedAtIso: string;
   projects: HabitProject[];
 };
 
@@ -32,6 +41,70 @@ const WEEKDAYS = [
   { label: "周六", value: 6 },
   { label: "周日", value: 0 },
 ];
+
+const DEFAULT_PROJECTS: HabitProject[] = [
+  {
+    id: `habit-${Date.now()}-1`,
+    habitName: "阅读",
+    frequency: "daily",
+    weeklyDays: [1, 2, 3, 4, 5],
+    completions: {},
+  },
+];
+
+const DEFAULT_STORED: StoredData = {
+  schemaVersion: SCHEMA_VERSION,
+  updatedAtIso: new Date().toISOString(),
+  projects: DEFAULT_PROJECTS,
+};
+
+function migrateProjects(raw: unknown): StoredData {
+  if (!raw || typeof raw !== "object") return DEFAULT_STORED;
+
+  const parsed = raw as Record<string, unknown>;
+
+  // v2: { schemaVersion, projects: HabitProject[] }
+  if (Array.isArray(parsed.projects)) {
+    const list = (parsed.projects as Record<string, unknown>[])
+      .map((p, idx) => {
+        if (!p || typeof p !== "object") return null;
+        const habitName = typeof p.habitName === "string" ? p.habitName : "习惯";
+        const frequency: Frequency = p.frequency === "weekly" ? "weekly" : "daily";
+        const weeklyDays: number[] = Array.isArray(p.weeklyDays) ? p.weeklyDays.filter((x: unknown) => typeof x === "number") : [1, 2, 3, 4, 5];
+        const completions: Record<string, boolean> =
+          p.completions && typeof p.completions === "object" ? (p.completions as Record<string, boolean>) : {};
+        const id = typeof p.id === "string" && p.id ? p.id : `habit-import-${Date.now()}-${idx}`;
+        return { id, habitName, frequency, weeklyDays, completions } as HabitProject;
+      })
+      .filter(Boolean) as HabitProject[];
+
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      updatedAtIso: new Date().toISOString(),
+      projects: list,
+    };
+  }
+
+  // legacy v1: flat habit object at root
+  const habitName = typeof parsed.habitName === "string" ? parsed.habitName : "阅读";
+  const frequency: Frequency = parsed.frequency === "weekly" ? "weekly" : "daily";
+  const weeklyDays = Array.isArray(parsed.weeklyDays) ? parsed.weeklyDays.filter((x: unknown) => typeof x === "number") : [1, 2, 3, 4, 5];
+  const completions =
+    parsed.completions && typeof parsed.completions === "object" ? (parsed.completions as Record<string, boolean>) : {};
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    updatedAtIso: new Date().toISOString(),
+    projects: [
+      {
+        id: "habit-legacy-1",
+        habitName,
+        frequency,
+        weeklyDays,
+        completions,
+      },
+    ],
+  };
+}
 
 function toYmdLocal(d: Date) {
   const yyyy = d.getFullYear();
@@ -63,66 +136,7 @@ function getMonthLabel(d: Date) {
 }
 
 export function MiniHabitApp() {
-  const [projects, setProjects] = useState<HabitProject[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) {
-        return [
-          {
-            id: `habit-${Date.now()}-1`,
-            habitName: "阅读",
-            frequency: "daily",
-            weeklyDays: [1, 2, 3, 4, 5],
-            completions: {},
-          },
-        ];
-      }
-
-      const parsed = JSON.parse(saved) as any;
-      // v2: { projects: HabitProject[] }
-      if (parsed && typeof parsed === "object" && Array.isArray(parsed.projects)) {
-        const list = parsed.projects as any[];
-        return list
-          .map((p, idx) => {
-            if (!p || typeof p !== "object") return null;
-            const habitName = typeof p.habitName === "string" ? p.habitName : "习惯";
-            const frequency: Frequency = p.frequency === "weekly" ? "weekly" : "daily";
-            const weeklyDays: number[] = Array.isArray(p.weeklyDays) ? p.weeklyDays.filter((x: any) => typeof x === "number") : [1, 2, 3, 4, 5];
-            const completions: Record<string, boolean> =
-              p.completions && typeof p.completions === "object" ? (p.completions as Record<string, boolean>) : {};
-            const id = typeof p.id === "string" && p.id ? p.id : `habit-import-${Date.now()}-${idx}`;
-            return { id, habitName, frequency, weeklyDays, completions } as HabitProject;
-          })
-          .filter(Boolean) as HabitProject[];
-      }
-
-      // legacy v1: single habit at root
-      const habitName = typeof parsed.habitName === "string" ? parsed.habitName : "阅读";
-      const frequency: Frequency = parsed.frequency === "weekly" ? "weekly" : "daily";
-      const weeklyDays = Array.isArray(parsed.weeklyDays) ? parsed.weeklyDays.filter((x: any) => typeof x === "number") : [1, 2, 3, 4, 5];
-      const completions =
-        parsed.completions && typeof parsed.completions === "object" ? (parsed.completions as Record<string, boolean>) : {};
-      return [
-        {
-          id: "habit-legacy-1",
-          habitName,
-          frequency,
-          weeklyDays,
-          completions,
-        },
-      ];
-    } catch {
-      return [
-        {
-          id: `habit-${Date.now()}-1`,
-          habitName: "阅读",
-          frequency: "daily",
-          weeklyDays: [1, 2, 3, 4, 5],
-          completions: {},
-        },
-      ];
-    }
-  });
+  const [stored, setStored] = useLocalStorage<StoredData>(STORAGE_KEY, DEFAULT_STORED, migrateProjects);
 
   const [view, setView] = useState<"list" | "detail" | "create">("list");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -132,6 +146,8 @@ export function MiniHabitApp() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [replaceConfirmOpen, setReplaceConfirmOpen] = useState(false);
   const [pendingReplaceProjects, setPendingReplaceProjects] = useState<HabitProject[] | null>(null);
+
+  const projects = stored.projects;
 
   const selectedProject = useMemo(() => {
     if (!selectedProjectId) return null;
@@ -153,18 +169,11 @@ export function MiniHabitApp() {
   }, [viewDate]);
 
   const persistProjects = (updater: (prev: HabitProject[]) => HabitProject[]) => {
-    setProjects((prev) => {
-      const next = updater(prev);
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          schemaVersion: SCHEMA_VERSION,
-          updatedAtIso: new Date().toISOString(),
-          projects: next,
-        }),
-      );
-      return next;
-    });
+    setStored((prev) => ({
+      ...prev,
+      updatedAtIso: new Date().toISOString(),
+      projects: updater(prev.projects),
+    }));
   };
 
   const exportData = () => {
@@ -190,11 +199,11 @@ export function MiniHabitApp() {
     const normalized: HabitProject[] = [];
     for (const [index, p] of rawProjects.entries()) {
       if (!p || typeof p !== "object") continue;
-      const pp = p as any;
+      const pp = p as Record<string, unknown>;
       const id = typeof pp.id === "string" && pp.id ? pp.id : `habit-import-${Date.now()}-${index}`;
       const habitName = typeof pp.habitName === "string" ? pp.habitName : "习惯";
       const frequency: Frequency = pp.frequency === "weekly" ? "weekly" : "daily";
-      const weeklyDays: number[] = Array.isArray(pp.weeklyDays) ? pp.weeklyDays.filter((x: any) => typeof x === "number") : [1, 2, 3, 4, 5];
+      const weeklyDays: number[] = Array.isArray(pp.weeklyDays) ? pp.weeklyDays.filter((x: unknown) => typeof x === "number") : [1, 2, 3, 4, 5];
       const completions: Record<string, boolean> =
         pp.completions && typeof pp.completions === "object" ? (pp.completions as Record<string, boolean>) : {};
       normalized.push({ id, habitName, frequency, weeklyDays, completions });
@@ -209,7 +218,7 @@ export function MiniHabitApp() {
       const text = await file.text();
       const parsed = JSON.parse(text) as unknown;
       if (!parsed || typeof parsed !== "object") throw new Error("文件格式错误：不是 JSON 对象");
-      const payload = parsed as any;
+      const payload = parsed as Record<string, unknown>;
 
       const imported = normalizeImportedProjects(payload.projects);
       if (imported.length === 0) throw new Error("文件中未找到有效的 projects 数据");
@@ -227,10 +236,10 @@ export function MiniHabitApp() {
       const merged = Array.from(map.values());
       persistProjects(() => merged);
       setTransferStatus({ type: "success", message: `导入成功：合并 ${imported.length} 个项目` });
-    } catch (e: any) {
+    } catch (e: unknown) {
       setTransferStatus({
         type: "error",
-        message: e?.message ? String(e.message) : "导入失败：解析文件失败或格式不符合要求",
+        message: e instanceof Error ? e.message : "导入失败：解析文件失败或格式不符合要求",
       });
     } finally {
       setIsImporting(false);
@@ -277,30 +286,26 @@ export function MiniHabitApp() {
   };
 
   const computeStreakLengthEndingAt = (date: Date, project: HabitProject) => {
-    // streak count along scheduled days
     if (!isScheduled(date, project)) return 0;
     const ymd = toYmdLocal(date);
     if (!isCompleted(ymd, project)) return 0;
 
     let streak = 0;
-    let cursor = new Date(date);
+    const cursor = new Date(date);
     cursor.setHours(0, 0, 0, 0);
 
-    // walk backwards but cap to avoid worst-case loops
     for (let i = 0; i < 200; i++) {
       const curYmd = toYmdLocal(cursor);
       if (!isCompleted(curYmd, project)) break;
       streak += 1;
-      // step to previous day that is scheduled
-      let prev = new Date(cursor);
+      const prev = new Date(cursor);
       prev.setDate(prev.getDate() - 1);
       let guard = 0;
       while (!isScheduled(prev, project) && guard < 14) {
-        prev = new Date(prev);
         prev.setDate(prev.getDate() - 1);
         guard += 1;
       }
-      cursor = prev;
+      cursor.setTime(prev.getTime());
     }
 
     return streak;
@@ -322,14 +327,12 @@ export function MiniHabitApp() {
       return "bg-emerald-400/20 border-emerald-200/30";
     }
 
-    // scheduled but not completed
     return "bg-white/5 border-white/10 hover:bg-white/10";
   };
 
   const monthGridDays = useMemo(() => {
     const start = getGridStartMonday(monthCursor);
     const days: Date[] = [];
-    // 6 weeks grid for stable layout
     for (let i = 0; i < 42; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
@@ -340,12 +343,7 @@ export function MiniHabitApp() {
   }, [monthCursor]);
 
   const monthStats = useMemo(() => {
-    if (!selectedProject) return { completedScheduled: 0, totalScheduled: 0, completionRate: 0, start: monthCursor, end: monthCursor };
-    const start = new Date(monthCursor);
-    const end = new Date(monthCursor);
-    end.setMonth(end.getMonth() + 1);
-    end.setDate(0); // last day previous month? Actually monthCursor is first day. Set end to last day of monthCursor month
-    end.setHours(23, 59, 59, 999);
+    if (!selectedProject) return { completedScheduled: 0, totalScheduled: 0, completionRate: 0 };
 
     let totalScheduled = 0;
     let completedScheduled = 0;
@@ -357,7 +355,7 @@ export function MiniHabitApp() {
       if (isCompleted(ymd, selectedProject)) completedScheduled += 1;
     }
     const completionRate = totalScheduled === 0 ? 0 : Math.round((completedScheduled / totalScheduled) * 100);
-    return { completedScheduled, totalScheduled, completionRate, start, end };
+    return { completedScheduled, totalScheduled, completionRate };
   }, [monthCursor, monthGridDays, selectedProject]);
 
   const todayYmd = toYmdLocal(today);
@@ -375,9 +373,7 @@ export function MiniHabitApp() {
           {view !== "create" && (
             <button
               type="button"
-              onClick={() => {
-                setView("create");
-              }}
+              onClick={() => setView("create")}
               className="px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 transition-colors text-sm font-semibold inline-flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
@@ -745,33 +741,20 @@ export function MiniHabitApp() {
         )}
       </main>
 
-      {replaceConfirmOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75">
-          <div className="w-[92%] max-w-sm rounded-[20px] bg-zinc-900/95 border border-white/10 shadow-2xl p-5">
-            <div className="text-white font-semibold text-lg">确认覆盖</div>
-            <div className="text-sm text-zinc-400 mt-2 leading-relaxed">
-              将用导入文件的项目替换当前全部打卡数据。{pendingReplaceProjects ? `项目：${pendingReplaceProjects.length} 个` : ""}
-            </div>
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={cancelReplaceImport}
-                className="px-4 py-2 rounded-xl bg-zinc-950/40 border border-white/10 text-white/90 hover:bg-zinc-950/60 transition-colors text-sm font-semibold"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={applyReplaceImport}
-                disabled={!pendingReplaceProjects}
-                className="px-4 py-2 rounded-xl bg-white/10 border border-white/15 text-white hover:bg-white/15 transition-colors text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                替换
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={replaceConfirmOpen}
+        title="确认覆盖"
+        description={
+          pendingReplaceProjects
+            ? `将用导入文件的项目替换当前全部打卡数据。项目：${pendingReplaceProjects.length} 个`
+            : "将用导入文件的项目替换当前全部打卡数据。"
+        }
+        confirmText="替换"
+        cancelText="取消"
+        onConfirm={applyReplaceImport}
+        onCancel={cancelReplaceImport}
+        disabled={!pendingReplaceProjects}
+      />
     </div>
   );
 }
@@ -918,12 +901,3 @@ function CreateHabitView({
     </Card>
   );
 }
-
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn("bg-zinc-900/60 p-5 rounded-[20px] shadow-sm border border-white/10", className)}>
-      {children}
-    </div>
-  );
-}
-
