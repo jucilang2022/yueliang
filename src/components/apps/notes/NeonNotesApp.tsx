@@ -1,6 +1,9 @@
-import React, { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, BookOpen, Plus, Search, Trash2, Tag as TagIcon } from "lucide-react";
-import { cn } from "../../../lib/utils";
+import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/Card";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useLocalStorage } from "@/lib/useLocalStorage";
 
 type Note = {
   id: string;
@@ -11,7 +14,7 @@ type Note = {
   updatedAtIso: string;
 };
 
-const STORAGE_KEY = "neon_notes_v1";
+const STORAGE_KEY = "***";
 const SCHEMA_VERSION = 1;
 
 type NeonNotesExportPayload = {
@@ -41,11 +44,11 @@ function renderMarkdownToHtml(markdown: string) {
   const renderInline = (input: string) => {
     let s = safeEscapeHtml(input);
     // `code`
-    s = s.replace(/`([^`]+)`/g, (_m, p1) => `<code class="px-1 rounded bg-white/5 border border-white/10">${p1}</code>`);
+    s = s.replace(/`([^`]+)`/g, (_m: string, p1: string) => `<code class="px-1 rounded bg-white/5 border border-white/10">${p1}</code>`);
     // **bold**
-    s = s.replace(/\*\*([^*]+)\*\*/g, (_m, p1) => `<strong class="text-white">${p1}</strong>`);
+    s = s.replace(/\*\*([^*]+)\*\*/g, (_m: string, p1: string) => `<strong class="text-white">${p1}</strong>`);
     // *italic*
-    s = s.replace(/\*([^*]+)\*/g, (_m, p1) => `<em class="text-white/80">${p1}</em>`);
+    s = s.replace(/\*([^*]+)\*/g, (_m: string, p1: string) => `<em class="text-white/80">${p1}</em>`);
     return s;
   };
 
@@ -111,31 +114,25 @@ function formatShortDate(iso: string) {
   return d.toLocaleString("zh-CN", { month: "short", day: "2-digit" });
 }
 
+function normalizeNotes(raw: unknown): Note[] {
+  if (!Array.isArray(raw)) return [];
+  const list = raw as Record<string, unknown>[];
+  return list
+    .map((n, idx) => {
+      if (!n || typeof n !== "object") return null;
+      const title = typeof n.title === "string" ? n.title : "未命名";
+      const content = typeof n.content === "string" ? n.content : "";
+      const tags = Array.isArray(n.tags) ? n.tags.filter((x: unknown) => typeof x === "string") : [];
+      const createdAtIso = typeof n.createdAtIso === "string" ? n.createdAtIso : new Date().toISOString();
+      const updatedAtIso = typeof n.updatedAtIso === "string" ? n.updatedAtIso : createdAtIso;
+      const id = typeof n.id === "string" && n.id ? n.id : `note-${Date.now()}-${idx}`;
+      return { id, title, tags, content, createdAtIso, updatedAtIso } as Note;
+    })
+    .filter(Boolean) as Note[];
+}
+
 export function NeonNotesApp() {
-  const [notes, setNotes] = useState<Note[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return [];
-      const parsed = JSON.parse(saved) as any;
-      if (!parsed || typeof parsed !== "object") return [];
-      if (!Array.isArray(parsed.notes)) return [];
-      const list = parsed.notes as any[];
-      return list
-        .map((n, idx) => {
-          if (!n || typeof n !== "object") return null;
-          const title = typeof n.title === "string" ? n.title : "未命名";
-          const content = typeof n.content === "string" ? n.content : "";
-          const tags = Array.isArray(n.tags) ? n.tags.filter((x: any) => typeof x === "string") : [];
-          const createdAtIso = typeof n.createdAtIso === "string" ? n.createdAtIso : new Date().toISOString();
-          const updatedAtIso = typeof n.updatedAtIso === "string" ? n.updatedAtIso : createdAtIso;
-          const id = typeof n.id === "string" && n.id ? n.id : `note-${Date.now()}-${idx}`;
-          return { id, title, tags, content, createdAtIso, updatedAtIso } as Note;
-        })
-        .filter(Boolean) as Note[];
-    } catch {
-      return [];
-    }
-  });
+  const [notes, setNotes] = useLocalStorage<Note[]>(STORAGE_KEY, []);
 
   const [query, setQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -176,8 +173,6 @@ export function NeonNotesApp() {
 
   const persist = (nextNotes: Note[]) => {
     setNotes(nextNotes);
-    const payload = { schemaVersion: SCHEMA_VERSION, updatedAtIso: new Date().toISOString(), notes: nextNotes };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   };
 
   const exportData = () => {
@@ -199,23 +194,6 @@ export function NeonNotesApp() {
     setTransferStatus({ type: "success", message: "导出成功：已生成 JSON 文件" });
   };
 
-  const normalizeImportedNotes = (rawNotes: unknown): Note[] => {
-    if (!Array.isArray(rawNotes)) return [];
-    const normalized: Note[] = [];
-    for (const [index, n] of rawNotes.entries()) {
-      if (!n || typeof n !== "object") continue;
-      const nn = n as any;
-      const id = typeof nn.id === "string" && nn.id ? nn.id : `note-import-${Date.now()}-${index}`;
-      const title = typeof nn.title === "string" ? nn.title : "未命名";
-      const content = typeof nn.content === "string" ? nn.content : "";
-      const tags = Array.isArray(nn.tags) ? nn.tags.filter((x: any) => typeof x === "string") : [];
-      const createdAtIso = typeof nn.createdAtIso === "string" ? nn.createdAtIso : new Date().toISOString();
-      const updatedAtIso = typeof nn.updatedAtIso === "string" ? nn.updatedAtIso : createdAtIso;
-      normalized.push({ id, title, tags, content, createdAtIso, updatedAtIso });
-    }
-    return normalized;
-  };
-
   const importDataFromFile = async (file: File) => {
     setIsImporting(true);
     setTransferStatus(null);
@@ -223,9 +201,9 @@ export function NeonNotesApp() {
       const text = await file.text();
       const parsed = JSON.parse(text) as unknown;
       if (!parsed || typeof parsed !== "object") throw new Error("文件格式错误：不是 JSON 对象");
-      const payload = parsed as any;
+      const payload = parsed as Record<string, unknown>;
 
-      const imported = normalizeImportedNotes(payload.notes);
+      const imported = normalizeNotes(payload.notes);
       if (imported.length === 0) throw new Error("文件中未找到有效的 notes 数据");
 
       if (transferMode === "replace") {
@@ -241,10 +219,10 @@ export function NeonNotesApp() {
       const merged = Array.from(map.values()).sort((a, b) => new Date(b.updatedAtIso).getTime() - new Date(a.updatedAtIso).getTime());
       persist(merged);
       setTransferStatus({ type: "success", message: `导入成功：合并 ${imported.length} 条笔记` });
-    } catch (e: any) {
+    } catch (e: unknown) {
       setTransferStatus({
         type: "error",
-        message: e?.message ? String(e.message) : "导入失败：解析文件失败或格式不符合要求",
+        message: e instanceof Error ? e.message : "导入失败：解析文件失败或格式不符合要求",
       });
     } finally {
       setIsImporting(false);
@@ -302,13 +280,7 @@ export function NeonNotesApp() {
       persist(
         notes.map((n) =>
           n.id === editingId
-            ? {
-                ...n,
-                title,
-                tags,
-                content,
-                updatedAtIso: nowIso,
-              }
+            ? { ...n, title, tags, content, updatedAtIso: nowIso }
             : n,
         ),
       );
@@ -625,71 +597,39 @@ export function NeonNotesApp() {
         )}
       </main>
 
-      {deleteConfirmOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75">
-          <div className="w-[92%] max-w-sm rounded-[20px] bg-zinc-900/95 border border-white/10 shadow-2xl p-5">
-            <div className="text-white font-semibold text-lg">确认删除</div>
-            <div className="text-sm text-zinc-400 mt-2 leading-relaxed">确定删除这条笔记吗？此操作不可撤销。</div>
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setDeleteConfirmOpen(false);
-                  setPendingDeleteId(null);
-                }}
-                className="px-4 py-2 rounded-xl bg-zinc-950/40 border border-white/10 text-white/90 hover:bg-zinc-950/60 transition-colors text-sm font-semibold"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!pendingDeleteId) return;
-                  persist(notes.filter((n) => n.id !== pendingDeleteId));
-                  setDeleteConfirmOpen(false);
-                  setPendingDeleteId(null);
-                }}
-                className="px-4 py-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-100 hover:bg-red-500/20 transition-colors text-sm font-semibold"
-              >
-                删除
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        title="确认删除"
+        description="确定删除这条笔记吗？此操作不可撤销。"
+        confirmText="删除"
+        cancelText="取消"
+        confirmDestructive
+        onConfirm={() => {
+          if (!pendingDeleteId) return;
+          persist(notes.filter((n) => n.id !== pendingDeleteId));
+          setDeleteConfirmOpen(false);
+          setPendingDeleteId(null);
+        }}
+        onCancel={() => {
+          setDeleteConfirmOpen(false);
+          setPendingDeleteId(null);
+        }}
+      />
 
-      {replaceConfirmOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75">
-          <div className="w-[92%] max-w-sm rounded-[20px] bg-zinc-900/95 border border-white/10 shadow-2xl p-5">
-            <div className="text-white font-semibold text-lg">确认覆盖</div>
-            <div className="text-sm text-zinc-400 mt-2 leading-relaxed">
-              将用导入文件的笔记替换当前数据。{pendingReplaceNotes ? `笔记：${pendingReplaceNotes.length} 条` : ""}
-            </div>
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={cancelReplaceImport}
-                className="px-4 py-2 rounded-xl bg-zinc-950/40 border border-white/10 text-white/90 hover:bg-zinc-950/60 transition-colors text-sm font-semibold"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={applyReplaceImport}
-                disabled={!pendingReplaceNotes}
-                className="px-4 py-2 rounded-xl bg-white/10 border border-white/15 text-white hover:bg-white/15 transition-colors text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                替换
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={replaceConfirmOpen}
+        title="确认覆盖"
+        description={
+          pendingReplaceNotes
+            ? `将用导入文件的笔记替换当前数据。笔记：${pendingReplaceNotes.length} 条`
+            : "将用导入文件的笔记替换当前数据。"
+        }
+        confirmText="替换"
+        cancelText="取消"
+        onConfirm={applyReplaceImport}
+        onCancel={cancelReplaceImport}
+        disabled={!pendingReplaceNotes}
+      />
     </div>
   );
 }
-
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("bg-zinc-900/60 p-5 rounded-[20px] shadow-sm border border-white/10", className)}>{children}</div>;
-}
-
