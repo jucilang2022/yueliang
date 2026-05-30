@@ -1,6 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { Activity, ArrowRight, Calendar, Coins, Database, DollarSign, Plus, Trash2 } from "lucide-react";
-import { cn } from "../../../lib/utils";
+import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/Card";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useLocalStorage } from "@/lib/useLocalStorage";
 
 interface GoldRecord {
   id: string;
@@ -31,27 +35,27 @@ function formatDateTime(dateIso: string) {
   });
 }
 
-export function KuGoldApp() {
-  const [records, setRecords] = useState<GoldRecord[]>(() => {
-    const saved = localStorage.getItem("kugold_records");
-    if (!saved) return [];
+type KuGoldExportPayload = {
+  schemaVersion: number;
+  exportedAtIso: string;
+  records: GoldRecord[];
+  currentPricePerGram: string;
+  currentPriceUpdatedAtIso: string;
+};
 
-    const parsed: GoldRecord[] = JSON.parse(saved);
-    return parsed.map((record) => ({
-      ...record,
-      type: record.type ?? "buy",
-    }));
-  });
+export function KuGoldApp() {
+  const [records, setRecords] = useLocalStorage<GoldRecord[]>("kugold_records", []);
+  const [currentPricePerGram, setCurrentPricePerGram] = useLocalStorage("kugold_current_price", "");
+  const [currentPriceUpdatedAtIso, setCurrentPriceUpdatedAtIso] = useLocalStorage(
+    "kugold_current_price_updated_at",
+    "",
+  );
 
   const [isAdding, setIsAdding] = useState(false);
   const [recordType, setRecordType] = useState<"buy" | "sell">("buy");
   const [pricePerGram, setPricePerGram] = useState("");
   const [grams, setGrams] = useState("");
   const [sellError, setSellError] = useState<string | null>(null);
-  const [currentPricePerGram, setCurrentPricePerGram] = useState(() => localStorage.getItem("kugold_current_price") ?? "");
-  const [currentPriceUpdatedAtIso, setCurrentPriceUpdatedAtIso] = useState(
-    () => localStorage.getItem("kugold_current_price_updated_at") ?? "",
-  );
   const [transferMode, setTransferMode] = useState<"replace" | "merge">("replace");
   const [transferStatus, setTransferStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -70,15 +74,6 @@ export function KuGoldApp() {
     const dd = String(d.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
   });
-
-  useEffect(() => {
-    localStorage.setItem("kugold_records", JSON.stringify(records));
-  }, [records]);
-
-  useEffect(() => {
-    localStorage.setItem("kugold_current_price", currentPricePerGram);
-    localStorage.setItem("kugold_current_price_updated_at", currentPriceUpdatedAtIso);
-  }, [currentPricePerGram, currentPriceUpdatedAtIso]);
 
   const derived = useMemo(() => {
     // 完全按照用户录入顺序计算（records 最新在前，这里反转为从最早到最新）
@@ -153,7 +148,7 @@ export function KuGoldApp() {
 
   const recordTypeLabel = recordType === "buy" ? "买入" : "卖出";
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = (e: FormEvent) => {
     e.preventDefault();
     if (!pricePerGram || !grams || !date) return;
 
@@ -204,14 +199,6 @@ export function KuGoldApp() {
     setTransferStatus({ type: "success", message: "已清空历史记录" });
   };
 
-  type KuGoldExportPayload = {
-    schemaVersion: number;
-    exportedAtIso: string;
-    records: GoldRecord[];
-    currentPricePerGram: string;
-    currentPriceUpdatedAtIso: string;
-  };
-
   const exportData = () => {
     const payload: KuGoldExportPayload = {
       schemaVersion: 1,
@@ -241,7 +228,7 @@ export function KuGoldApp() {
     const normalized: GoldRecord[] = [];
     for (const [index, r] of rawRecords.entries()) {
       if (!r || typeof r !== "object") continue;
-      const rr = r as any;
+      const rr = r as Record<string, unknown>;
 
       const id = typeof rr.id === "string" && rr.id ? rr.id : `import-${Date.now()}-${index}`;
       const type = rr.type === "sell" ? ("sell" as const) : ("buy" as const);
@@ -273,7 +260,7 @@ export function KuGoldApp() {
       const parsed = JSON.parse(text) as unknown;
 
       if (!parsed || typeof parsed !== "object") throw new Error("文件格式错误：不是 JSON 对象");
-      const payload = parsed as any;
+      const payload = parsed as Record<string, unknown>;
 
       const importedRecords = normalizeImportedRecords(payload.records);
       if (importedRecords.length === 0) throw new Error("文件中未找到有效的 records 数据");
@@ -292,26 +279,23 @@ export function KuGoldApp() {
         return;
       }
 
-      // merge
-        // merge：按 id 去重（id 不太可能冲突）
-        setRecords((prev) => {
-          const merged = [...prev, ...importedRecords];
-          const map = new Map<string, GoldRecord>();
-          for (const r of merged) map.set(r.id, r);
-          return Array.from(map.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        });
-        // 金价直接用导入的
-        setCurrentPricePerGram(importedCurrentPricePerGram);
-        setCurrentPriceUpdatedAtIso(importedCurrentPriceUpdatedAtIso);
+      // merge：按 id 去重（id 不太可能冲突）
+      const merged = [...records, ...importedRecords];
+      const map = new Map<string, GoldRecord>();
+      for (const r of merged) map.set(r.id, r);
+      setRecords(Array.from(map.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      // 金价直接用导入的
+      setCurrentPricePerGram(importedCurrentPricePerGram);
+      setCurrentPriceUpdatedAtIso(importedCurrentPriceUpdatedAtIso);
 
       setTransferStatus({
         type: "success",
         message: `导入成功：成功导入 ${importedRecords.length} 条记录`,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       setTransferStatus({
         type: "error",
-        message: e?.message ? String(e.message) : "导入失败：解析文件失败或格式不符合要求",
+        message: e instanceof Error ? e.message : "导入失败：解析文件失败或格式不符合要求",
       });
     } finally {
       setIsImporting(false);
@@ -404,45 +388,42 @@ export function KuGoldApp() {
         </div>
 
         {/* Row 3 */}
-        <div className="grid grid-cols-1 gap-3">
-          <Card>
-            <div className="flex items-center text-zinc-400 mb-2 font-medium text-sm">
-              <Coins className="w-4 h-4 mr-2 text-amber-300" />
-              当前持仓成本（元/克）
-            </div>
-            <div className="text-2xl font-semibold tracking-tight">
-              <span className="text-sm text-zinc-400 mr-1">¥</span>
-              {formatMoney(derived.avgCostPerGram)}
-            </div>
-          </Card>
-        </div>
+        <Card>
+          <div className="flex items-center text-zinc-400 mb-2 font-medium text-sm">
+            <Coins className="w-4 h-4 mr-2 text-amber-300" />
+            当前持仓成本（元/克）
+          </div>
+          <div className="text-2xl font-semibold tracking-tight">
+            <span className="text-sm text-zinc-400 mr-1">¥</span>
+            {formatMoney(derived.avgCostPerGram)}
+          </div>
+        </Card>
 
-        <div className="grid grid-cols-1 gap-3">
-          <Card>
-            <div className="flex items-center text-zinc-400 mb-3 font-medium text-sm">
-              <Coins className="w-4 h-4 mr-2 text-amber-500" />
-              当前金价（元/克）
+        <Card>
+          <div className="flex items-center text-zinc-400 mb-3 font-medium text-sm">
+            <Coins className="w-4 h-4 mr-2 text-amber-500" />
+            当前金价（元/克）
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={currentPricePerGram}
+              onChange={(e) => {
+                setCurrentPricePerGram(e.target.value);
+                setCurrentPriceUpdatedAtIso(new Date().toISOString());
+              }}
+              className="w-full bg-zinc-950/40 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white/10 transition-shadow text-base font-medium"
+              placeholder="例如：1200"
+            />
+            <div className="text-xs text-zinc-400 font-medium whitespace-nowrap">
+              更新时间：{currentPriceUpdatedAtIso ? formatDateTime(currentPriceUpdatedAtIso) : "—"}
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={currentPricePerGram}
-                onChange={(e) => {
-                  setCurrentPricePerGram(e.target.value);
-                  setCurrentPriceUpdatedAtIso(new Date().toISOString());
-                }}
-                className="w-full bg-zinc-950/40 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white/10 transition-shadow text-base font-medium"
-                placeholder="例如：1200"
-              />
-              <div className="text-xs text-zinc-400 font-medium whitespace-nowrap">
-                更新时间：{currentPriceUpdatedAtIso ? formatDateTime(currentPriceUpdatedAtIso) : "—"}
-              </div>
-            </div>
-          </Card>
-        </div>
+          </div>
+        </Card>
 
+        {/* Add Record */}
         <div className="bg-zinc-900/60 rounded-[20px] shadow-sm border border-white/10 overflow-hidden transition-all duration-300">
           <button
             onClick={() => setIsAdding(!isAdding)}
@@ -551,95 +532,100 @@ export function KuGoldApp() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-3">
-          <Card>
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div>
-                <div className="flex items-center text-zinc-400 mb-2 font-medium text-sm">
-                  <Database className="w-4 h-4 mr-2 text-amber-500" />
-                  数据导入/导出
-                </div>
-                <div className="text-xs text-zinc-400 leading-relaxed">
-                  在不同设备之间迁移数据：导出当前 JSON，在另一个设备里导入即可。
-                </div>
+        {/* Import/Export */}
+        <Card>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <div className="flex items-center text-zinc-400 mb-2 font-medium text-sm">
+                <Database className="w-4 h-4 mr-2 text-amber-500" />
+                数据导入/导出
               </div>
-
-              <button
-                type="button"
-                onClick={exportData}
-                className="shrink-0 px-3 py-2 rounded-xl bg-white/10 text-white border border-white/10 hover:bg-white/15 transition-colors text-sm font-semibold"
-              >
-                导出
-              </button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  void importDataFromFile(file);
-                }}
-              />
-
-              <button
-                type="button"
-                disabled={isImporting}
-                onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-2 rounded-xl bg-white/10 text-white border border-white/10 hover:bg-white/15 transition-colors text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isImporting ? "导入中..." : "选择 JSON 并导入"}
-              </button>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-zinc-400 font-medium whitespace-nowrap">导入方式</span>
-                <button
-                  type="button"
-                  onClick={() => setTransferMode("replace")}
-                  className={cn(
-                    "px-3 py-2 rounded-xl text-sm font-semibold border transition-colors",
-                    transferMode === "replace"
-                      ? "bg-white text-black border-white"
-                      : "bg-zinc-950/40 text-zinc-100 border-white/10 hover:bg-zinc-950/60",
-                  )}
-                >
-                  覆盖
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTransferMode("merge")}
-                  className={cn(
-                    "px-3 py-2 rounded-xl text-sm font-semibold border transition-colors",
-                    transferMode === "merge"
-                      ? "bg-white text-black border-white"
-                      : "bg-zinc-950/40 text-zinc-100 border-white/10 hover:bg-zinc-950/60",
-                  )}
-                >
-                  合并
-                </button>
+              <div className="text-xs text-zinc-400 leading-relaxed">
+                在不同设备之间迁移数据：导出当前 JSON，在另一个设备里导入即可。
               </div>
             </div>
 
-            {transferStatus && (
-              <div
+            <button
+              type="button"
+              onClick={exportData}
+              className="shrink-0 px-3 py-2 rounded-xl bg-white/10 text-white border border-white/10 hover:bg-white/15 transition-colors text-sm font-semibold"
+            >
+              导出
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                void importDataFromFile(file);
+              }}
+            />
+
+            <button
+              type="button"
+              disabled={isImporting}
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-2 rounded-xl bg-white/10 text-white border border-white/10 hover:bg-white/15 transition-colors text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isImporting ? "导入中..." : "选择 JSON 并导入"}
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-400 font-medium whitespace-nowrap">导入方式</span>
+              <button
+                type="button"
+                onClick={() => setTransferMode("replace")}
                 className={cn(
-                  "mt-3 text-sm font-medium",
-                  transferStatus.type === "success" ? "text-emerald-300" : "text-red-300",
+                  "px-3 py-2 rounded-xl text-sm font-semibold border transition-colors",
+                  transferMode === "replace"
+                    ? "bg-white text-black border-white"
+                    : "bg-zinc-950/40 text-zinc-100 border-white/10",
                 )}
               >
-                {transferStatus.message}
-              </div>
-            )}
-          </Card>
-        </div>
+                覆盖
+              </button>
+              <button
+                type="button"
+                onClick={() => setTransferMode("merge")}
+                className={cn(
+                  "px-3 py-2 rounded-xl text-sm font-semibold border transition-colors",
+                  transferMode === "merge"
+                    ? "bg-white text-black border-white"
+                    : "bg-zinc-950/40 text-zinc-100 border-white/10",
+                )}
+              >
+                合并
+              </button>
+            </div>
+          </div>
 
+          {transferStatus && (
+            <div
+              className={cn(
+                "mt-3 text-sm font-medium",
+                transferStatus.type === "success" ? "text-emerald-300" : "text-red-300",
+              )}
+            >
+              {transferStatus.message}
+            </div>
+          )}
+        </Card>
+
+        {/* History */}
         <div className="space-y-3 pt-2">
           <div className="flex items-center justify-between gap-3 px-1">
-            <h3 className="text-lg font-semibold">历史记录</h3>
+            <h3 className="text-lg font-semibold">
+              历史记录
+              {records.length > 0 && (
+                <span className="text-sm text-zinc-400 font-normal ml-2">共 {records.length} 条</span>
+              )}
+            </h3>
             <button
               type="button"
               onClick={handleClearRecords}
@@ -726,65 +712,32 @@ export function KuGoldApp() {
       </main>
 
       {/* Clear confirm modal */}
-      {clearConfirmOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75">
-          <div className="w-[92%] max-w-sm rounded-[20px] bg-zinc-900/95 border border-white/10 shadow-2xl p-5">
-            <div className="text-white font-semibold text-lg">确认清空</div>
-            <div className="text-sm text-zinc-400 mt-2 leading-relaxed">
-              确定清空所有历史记录吗？此操作不可撤销。
-            </div>
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setClearConfirmOpen(false)}
-                className="px-4 py-2 rounded-xl bg-zinc-950/40 border border-white/10 text-white/90 hover:bg-zinc-950/60 transition-colors text-sm font-semibold"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={applyClearRecords}
-                className="px-4 py-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-100 hover:bg-red-500/20 transition-colors text-sm font-semibold"
-              >
-                清空
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={clearConfirmOpen}
+        title="确认清空"
+        description={`确定清空所有历史记录吗（共 ${records.length} 条）？此操作不可撤销。`}
+        confirmText="清空"
+        cancelText="取消"
+        confirmDestructive
+        onConfirm={applyClearRecords}
+        onCancel={() => setClearConfirmOpen(false)}
+      />
 
       {/* Replace confirm modal */}
-      {replaceConfirmOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75">
-          <div className="w-[92%] max-w-sm rounded-[20px] bg-zinc-900/95 border border-white/10 shadow-2xl p-5">
-            <div className="text-white font-semibold text-lg">确认覆盖</div>
-            <div className="text-sm text-zinc-400 mt-2 leading-relaxed">
-              将用导入文件的数据替换当前记录与金价。{pendingReplaceImport ? `记录：${pendingReplaceImport.records.length} 条` : ""}
-            </div>
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={cancelReplaceImport}
-                className="px-4 py-2 rounded-xl bg-zinc-950/40 border border-white/10 text-white/90 hover:bg-zinc-950/60 transition-colors text-sm font-semibold"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={applyReplaceImport}
-                disabled={!pendingReplaceImport}
-                className="px-4 py-2 rounded-xl bg-white/10 border border-white/15 text-white hover:bg-white/15 transition-colors text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                替换
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={replaceConfirmOpen}
+        title="确认覆盖"
+        description={
+          pendingReplaceImport
+            ? `将用导入文件的数据替换当前记录与金价。记录：${pendingReplaceImport.records.length} 条`
+            : "将用导入文件的数据替换当前记录与金价。"
+        }
+        confirmText="替换"
+        cancelText="取消"
+        onConfirm={applyReplaceImport}
+        onCancel={cancelReplaceImport}
+        disabled={!pendingReplaceImport}
+      />
     </div>
   );
-}
-
-function Card({ children }: { children: React.ReactNode }) {
-  return <div className="bg-zinc-900/60 p-5 rounded-[20px] shadow-sm border border-white/10">{children}</div>;
 }
